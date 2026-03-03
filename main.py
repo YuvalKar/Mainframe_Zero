@@ -25,7 +25,7 @@ def generate_minimal_code(user_request: str) -> str:
         contents=user_request,
         config=types.GenerateContentConfig(
             system_instruction=system_rules,
-            temperature=0.1, # Keep it low so the AI doesn't get too "creative" with syntax
+            temperature=0.1, # Keep it low so the AI doesn't get too "creative" with syntax 1
         )
     )
     
