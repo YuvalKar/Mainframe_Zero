@@ -4,7 +4,60 @@ import subprocess
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+import re
 
+
+def enrich_prompt_with_files(user_input: str) -> str:
+    # Find all words starting with @ (supports letters, numbers, dots, slashes)
+    file_matches = re.findall(r'@([\w\.\-\/]+)', user_input)
+    
+    if not file_matches:
+        return user_input # Return as is if no files requested
+        
+    enriched_prompt = user_input + "\n\n--- Attached Files Context ---\n"
+    
+    for filename in file_matches:
+        if os.path.exists(filename):
+            try:
+                with open(filename, 'r', encoding='utf-8') as f:
+                    file_content = f.read()
+                enriched_prompt += f"\n[Content of {filename}]:\n{file_content}\n"
+                print(f"[System: Successfully attached '{filename}' to context]")
+            except Exception as e:
+                print(f"[System Error: Could not read '{filename}': {e}]")
+        else:
+            print(f"[System Warning: File '{filename}' not found. Ignored.]")
+            
+    enriched_prompt += "------------------------------\n"
+    return enriched_prompt
+
+
+def passes_syntax_qa(code_string: str) -> bool:
+    # ast.parse checks if it's grammatically correct Python without executing
+    try:
+        ast.parse(code_string)
+        print("[System: QA Passed - The output is valid Python syntax.]")
+        return True
+    except SyntaxError as err:
+        print(f"\n[QA Alert: The AI generated invalid Python code!]\nError details: {err}")
+        print("Skipping execution. Please ask the AI to fix the code.\n")
+        return False
+
+
+def save_and_execute(code_string: str):
+    # Ask the human in the loop before firing
+    user_decision = input("Save to file and run? (y/n): ")
+    
+    if user_decision.lower() == 'y':
+        filename = "generated_script.py"
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(code_string)
+            
+        print(f"\n[System: Code saved to {filename}. Executing now...]\n")
+        # Modern execution using subprocess
+        subprocess.run(["python", filename])
+
+###############################################################
 # Load environment variables
 load_dotenv()
 
@@ -59,44 +112,22 @@ def terminal_chat():
             continue
 
         try:
-            # Send the message to the current active chat session
-            response = chat.send_message(user_input)
+            # Station 1: Parsing & Enrichment
+            final_prompt = enrich_prompt_with_files(user_input)
+            
+            # Station 2: The LLM Brain
+            response = chat.send_message(final_prompt)
             ai_code = response.text
             
             print("\n--- AI Output ---")
             print(ai_code)
             print("-----------------\n")
             
-            # --- QA Station: Syntax Validation ---
-            is_valid_python = False
-
-            try:
-                # ast.parse reads the string and checks if it's grammatically correct Python
-                # It does NOT execute the code, so it's perfectly safe
-                ast.parse(ai_code)
-                is_valid_python = True
-                print("[System: QA Passed - The output is valid Python syntax.]")
+            # Station 3: Quality Assurance
+            if passes_syntax_qa(ai_code):
                 
-            except SyntaxError as err:
-                # If ast.parse fails, it throws a SyntaxError
-                pass # do nothing, we just won't execute it
-            
-            # --- Execution Station (Only if QA passed) ---
-            if is_valid_python:
-                # Human in the loop: Ask the boss before doing anything crazy
-                user_decision = input("Save to file and run? (y/n): ")
-                
-                if user_decision.lower() == 'y':
-                    filename = "generated_script.py"
-                    
-                    # Write the raw code to a new Python file
-                    with open(filename, "w", encoding="utf-8") as file:
-                        file.write(ai_code)
-                    
-                    print(f"\n[System: Code saved to {filename}. Executing now...]\n")
-                    
-                    # Run the newly created file using the modern subprocess module
-                    subprocess.run(["python", filename])
+                # Station 4: Execution
+                save_and_execute(ai_code)
                 
         except Exception as e:
             print(f"\n[Error handling request: {e}]\n")
