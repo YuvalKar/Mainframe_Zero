@@ -1,12 +1,13 @@
 import os
 import ast
+import json
 import subprocess
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 import re
 
-
+###################################################################################
 def enrich_prompt_with_files(user_input: str) -> str:
     # Find all words starting with @ (supports letters, numbers, dots, slashes)
     file_matches = re.findall(r'@([\w\.\-\/]+)', user_input)
@@ -31,7 +32,7 @@ def enrich_prompt_with_files(user_input: str) -> str:
     enriched_prompt += "------------------------------\n"
     return enriched_prompt
 
-
+#########################################################################
 def passes_syntax_qa(code_string: str) -> bool:
     # ast.parse checks if it's grammatically correct Python without executing
     try:
@@ -39,17 +40,20 @@ def passes_syntax_qa(code_string: str) -> bool:
         print("[System: QA Passed - The output is valid Python syntax.]")
         return True
     except SyntaxError as err:
-        print(f"\n[QA Alert: The AI generated invalid Python code!]\nError details: {err}")
-        print("Skipping execution. Please ask the AI to fix the code.\n")
+        # print(f"\n[QA Alert: The AI generated invalid Python code!]\nError details: {err}")
+        # print("Skipping execution. Please ask the AI to fix the code.\n")
+        # Do nothing
         return False
 
-
-def save_and_execute(code_string: str):
+#################################################################
+def save_and_execute(code_string: str, target_filename: str = None):
+    # Use the filename from the JSON, or a default one if missing
+    filename = target_filename if target_filename else "generated_script.py"
+    
     # Ask the human in the loop before firing
-    user_decision = input("Save to file and run? (y/n): ")
+    user_decision = input(f"Save to {filename} and run? (y/n): ")
     
     if user_decision.lower() == 'y':
-        filename = "generated_script.py"
         with open(filename, "w", encoding="utf-8") as file:
             file.write(code_string)
             
@@ -57,20 +61,32 @@ def save_and_execute(code_string: str):
         # Modern execution using subprocess
         subprocess.run(["python", filename])
 
+#################################################################
+def save_markdown(content_string: str, target_filename: str = None):
+    # Use the filename from the JSON, or a default one if missing
+    filename = target_filename if target_filename else "output.md"
+    
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write(content_string)
+    print(f"\n[System: Markdown content cleanly saved to {filename}]\n")
+
+    
 ###############################################################
+
 # Load environment variables
 load_dotenv()
 
 client = genai.Client()
 
 def terminal_chat():
-    # System rules - keeping it strictly technical
-    system_rules = """
-    You are a strictly technical Python code generator. 
-    Return ONLY raw, valid Python code.
-    Do NOT wrap the code in markdown blocks (like ```python).
-    Do NOT add any explanations, greetings, or notes before or after the code.
-    """
+    
+    # Read the system prompt from our markdown file
+    try:
+        with open("system_prompt.md", "r", encoding="utf-8") as f:
+            system_rules = f.read()
+    except FileNotFoundError:
+        print("[System Error: system_prompt.md not found!]")
+        return
     
     # A helper function to conceptualize opening a fresh chat session
     def create_new_chat():
@@ -80,6 +96,8 @@ def terminal_chat():
             config=types.GenerateContentConfig(
                 system_instruction=system_rules,
                 temperature=0.1,
+                # Force the model to strictly return JSON!
+                response_mime_type="application/json", 
             )
         )
 
@@ -117,17 +135,43 @@ def terminal_chat():
             
             # Station 2: The LLM Brain
             response = chat.send_message(final_prompt)
-            ai_code = response.text
             
-            print("\n--- AI Output ---")
-            print(ai_code)
-            print("-----------------\n")
-            
-            # Station 3: Quality Assurance
-            if passes_syntax_qa(ai_code):
+            # Station 3: JSON Parsing and Routing
+            try:
+                # Convert the AI's string response into a Python dictionary
+                ai_data = json.loads(response.text)
                 
-                # Station 4: Execution
-                save_and_execute(ai_code)
+                # Extract the fields based on our system_prompt.md schema
+                thought_process = ai_data.get("thought_process", "")
+                action = ai_data.get("action", "chat")
+                content = ai_data.get("content", "")
+                target_filename = ai_data.get("target_filename")
+
+                print(f"\n[AI Thought Process]: {thought_process}")
+                print(f"\n--- AI Output (Action: {action}) ---")
+                print(content)
+                print("-----------------\n")
+
+                # --- The Router ---
+                if action == "python":
+                    # Station 4a: Python QA and Execution
+                    if passes_syntax_qa(content):
+                        save_and_execute(content, target_filename)
+                        
+                elif action == "markdown":
+                    # Station 4b: Save Markdown
+                    save_markdown(content, target_filename)
+                    
+                elif action == "chat":
+                    # Station 4c: Just chat, do nothing else
+                    pass 
+                    
+                else:
+                    print(f"[System Warning: Unknown action '{action}' received from AI.]")
+
+            except json.JSONDecodeError:
+                print("\n[System Error: AI did not return valid JSON!]")
+                print("Raw output:", response.text)
                 
         except Exception as e:
             print(f"\n[Error handling request: {e}]\n")
