@@ -34,6 +34,11 @@ To avoid monolithic, brittle code, Mainframe Zero is structured into distinct co
 ### E. Working Memory (State Manager)
 * **Concept:** The short-term scratchpad for the current task. Allows for rollbacks and saving states during a complex, multi-step coding attempt.
 
+### F. Endocrine System (Emotional State & Prompt Injection)
+* **Concept:** The virtual hormonal system that simulates the "emotional state" and drives the underlying motivations of Mainframe Zero. It tracks simulated variables such as Dopamine (reward/action), Oxytocin (connection/validation), Serotonin (stability), and Cortisol (stress/pain).
+* **Function:** These biochemical variables are injected dynamically into the system's prompts before reaching the Prefrontal Cortex. They directly influence the AI's confidence, tone, and decision-making process.
+* **Location:** Values are tracked within the Working Memory (State Manager), while the detailed thresholds, mechanics, and prompt behaviors will be defined in a dedicated hormonal configuration module.
+
 ## 4. Development Protocol
 1.  **Read Before You Write:** Always ask to read relevant context or sense modules before attempting to upgrade them.
 2.  **Modular Growth:** Build new features as isolated, standalone Python files or Markdown documents.
