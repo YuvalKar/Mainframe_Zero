@@ -16,8 +16,7 @@ INPUTS:
 """
 
 import json
-### TBD -< Rrplace this:    #  from google import genai
-from core_utils.memory_db import get_db_connection
+from core_utils.memory_db import get_db_connection, get_local_model
 
 def execute(content: str, metadata: dict = None) -> dict:
     # Ensure there is content to save
@@ -25,17 +24,12 @@ def execute(content: str, metadata: dict = None) -> dict:
         return {"success": False, "message": "No content provided to encode."}
 
     try:
-        ### TBD -< Rrplace this: 
-        # 1. Generate embedding using Gemini API (outputs 768 dimensions)
-        # client = genai.Client()
-        # response = client.models.embed_content(
-        #     model='text-embedding-004',
-        #     contents=content
-        # )
-        # embedding = response.embeddings[0].values
-
-        # We will use the local model for embedding generation - BAAI/bge-m3
+        # 1. Generate embedding using the local BAAI/bge-m3 model
+        model = get_local_model()
         
+        # The encode method returns a numpy array, we convert it to a standard python list
+        embedding_array = model.encode(content)
+        embedding = embedding_array.tolist()
 
         # 2. Save to PostgreSQL Hippocampus database
         conn = get_db_connection()
@@ -49,7 +43,7 @@ def execute(content: str, metadata: dict = None) -> dict:
 
         # Insert query - casting the python list to a pgvector type using ::vector
         insert_query = """
-            INSERT INTO mainframe_memory (content, metadata, embedding)
+            INSERT INTO hippocampus (content, metadata, embedding)
             VALUES (%s, %s, %s::vector)
         """
         cursor.execute(insert_query, (content, meta_json, embedding))
@@ -65,3 +59,4 @@ def execute(content: str, metadata: dict = None) -> dict:
 
     except Exception as e:
         return {"success": False, "message": f"Failed to encode memory: {str(e)}"}
+      
