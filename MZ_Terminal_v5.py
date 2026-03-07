@@ -7,7 +7,7 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 from senses.python_runner_sense import run_and_sense
-from core_utils.skill_loader import get_available_skills
+from core_utils.actions_scanner import get_available_skills
 
 ###################################################################################
 def enrich_prompt_with_files(user_input: str) -> str:
