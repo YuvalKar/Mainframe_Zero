@@ -14,7 +14,7 @@ import subprocess
 import json
 import os
 
-def sense_python_function_execution(filepath: str, function_name: str, args: list = None, kwargs: dict = None) -> dict:
+def execute(filepath: str, function_name: str, args: list = None, kwargs: dict = None) -> dict:
     """
     Acts as a 'Sense' for Mainframe Zero, providing direct feedback (Pain/Reward) 
     from executing specific logic within a file.
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         f.write("def add(a, b): return a + b")
 
     print("Testing Sense...")
-    feedback = sense_python_function_execution("temp_math.py", "add", args=[10, 5])
+    feedback = execute("temp_math.py", "add", args=[10, 5])
     print(f"Feedback: {feedback}")
     
     os.remove("temp_math.py")
