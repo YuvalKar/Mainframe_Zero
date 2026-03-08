@@ -29,4 +29,3 @@ To interact with my memory, I use the following specific actions:
 * `hippo_forget`: To physically delete a specific memory ID if it is proven to be false, outdated, or polluting the database.
 * `hippo_update`: To overwrite an existing memory ID with new, corrected information without creating duplicates.
 * `hippo_audit`: To browse and retrieve memories strictly by metadata (e.g., date, category) rather than semantic similarity.
-* `hippo_consolidate`: To summarize and combine multiple fragmented memories into a single, high-level insight, deleting the older fragments to keep the Hippocampus clean.
