@@ -1,0 +1,7 @@
+
+BACK END
+python mz_server.py
+
+FRONT END
+npm run dev --prefix mz_frontend
+
