@@ -6,8 +6,8 @@ import uvicorn
 from google import genai
 from google.genai import types
 
-# Import our core logic (The Prefrontal Cortex)
-import MZ_Terminal
+# Import our new core logic module
+import mz_core
 
 # Global variables to hold our client AND active chat session
 mz_client = None
@@ -60,6 +60,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 class UserRequest(BaseModel):
     user_input: str
 
@@ -75,10 +76,10 @@ async def chat_endpoint(request: UserRequest):
         return {"error": "Chat session is not initialized."}
     
     # Step 1: Enrich the prompt using the core logic
-    final_prompt = MZ_Terminal.enrich_prompt(request.user_input)
+    final_prompt = mz_core.enrich_prompt(request.user_input)
     
     # Step 2: Run the agentic loop and get the log
-    result_log = MZ_Terminal.run_agentic_loop(mz_chat_session, final_prompt)
+    result_log = mz_core.run_agentic_loop(mz_chat_session, final_prompt)
     
     # Return the full log to the frontend
     return result_log
