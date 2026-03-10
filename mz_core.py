@@ -2,9 +2,40 @@ import os
 import json
 import importlib.util
 import re
+import asyncio
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
 
 # Import utility functions
 from core_utils.actions_scanner import get_available_actions
+
+# Load environment variables where the core actually needs them
+load_dotenv()
+
+# We can keep a single client instance for the core to use
+_client = genai.Client()
+
+def create_chat_session():
+    """
+    Initializes and returns a new chat session with the specific engine (Gemini).
+    The server/terminal don't need to know the implementation details.
+    """
+    try:
+        with open("system_prompt.md", "r", encoding="utf-8") as f:
+            system_rules = f.read()
+    except FileNotFoundError:
+        system_rules = "You are a helpful AI."
+        print("[Core Warning: system_prompt.md not found]")
+
+    return _client.chats.create(
+        model='gemini-2.5-flash',
+        config=types.GenerateContentConfig(
+            system_instruction=system_rules,
+            temperature=0.1,
+            response_mime_type="application/json",
+        )
+    )
 
 def enrich_prompt(user_input: str) -> str:
     """
@@ -44,19 +75,6 @@ def enrich_prompt(user_input: str) -> str:
     else:
         enriched_prompt += "No senses available.\n\n"
 
-    # Inject Hippocampus actions (Memory)
-    # TBD - we might want to separate these out or handle them differently since they are more dynamic and might require a different approach to context injection. 
-    # For now, we'll not activate it
-    # 
-    # current_memory_actions = get_available_actions("hippocampus")
-    # enriched_prompt += "[System Context: Available Hippocampus Actions]\n"
-    # if current_memory_actions:
-    #     for name, desc in current_memory_actions.items():
-    #         enriched_prompt += f"- Action Name: '{name}' (Memory)\n  API: {desc}\n\n"
-    # else:
-    #     enriched_prompt += "No memory actions available.\n\n"
-    
-
     return enriched_prompt
 
 ################################### 
@@ -88,23 +106,31 @@ def execute_single_action(action_name: str, action_data: dict) -> str:
         return f"Action '{action_name}': Execution failed - {str(ex)}"
 
 #########################################
-def run_agentic_loop(chat, current_prompt: str) -> dict:
+async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dict:
     """
-    Runs the interaction loop with the AI. 
-    Collects the execution history and returns it as a dictionary.
+    Runs the interaction loop with the AI asynchronously.
+    Calls emit_callback(dict) if provided to stream logs in real-time.
     """
     loop_counter = 0
     max_loops = 3 
     interaction_log = []
 
+    # Helper function to log internally and emit to the outside world immediately
+    async def log_and_emit(item_type: str, content: str):
+        item = {"type": item_type, "content": content}
+        interaction_log.append(item)
+        if emit_callback:
+            await emit_callback(item)
+
     while True:
         loop_counter += 1
         if loop_counter > max_loops:
-            interaction_log.append({"type": "system", "content": "Agent reached maximum allowed loops."})
+            await log_and_emit("system", "Agent reached maximum allowed loops.")
             break
 
         try:
-            response = chat.send_message(current_prompt)
+            # Run the blocking Gemini call in a separate thread so we don't block the WebSocket
+            response = await asyncio.to_thread(chat.send_message, current_prompt)
             ai_data = json.loads(response.text)
             
             thought = ai_data.get("thought_process", "")
@@ -113,9 +139,9 @@ def run_agentic_loop(chat, current_prompt: str) -> dict:
             actions_list = ai_data.get("act", [])
 
             if thought:
-                interaction_log.append({"type": "thought", "content": thought})
+                await log_and_emit("thought", thought)
             if chat_text:
-                interaction_log.append({"type": "chat", "content": chat_text})
+                await log_and_emit("chat", chat_text)
 
             if action_type == "chat" or not actions_list:
                 break
@@ -125,13 +151,12 @@ def run_agentic_loop(chat, current_prompt: str) -> dict:
                 action_name = act_item.get("name")
                 action_data = act_item.get("data", {})
                 
-                # We log that we are starting the action
-                interaction_log.append({"type": "system", "content": f"Initiating Action -> {action_name}"})
+                await log_and_emit("system", f"Initiating Action -> {action_name}")
                 
                 result_string = execute_single_action(action_name, action_data)
                 execution_summary.append(result_string)
                 
-                interaction_log.append({"type": "action_result", "content": result_string})
+                await log_and_emit("action_result", result_string)
 
             if execution_summary:
                 current_prompt = "[System Sensory Feedback]\n" + "\n".join(execution_summary)
@@ -139,11 +164,10 @@ def run_agentic_loop(chat, current_prompt: str) -> dict:
                 current_prompt = "[System: Actions resulted in no feedback.]"
 
         except json.JSONDecodeError:
-            err_msg = f"Failed to parse AI response as JSON. Raw response: {response.text}"
-            interaction_log.append({"type": "error", "content": err_msg})
+            await log_and_emit("error", f"Failed to parse AI response as JSON. Raw response: {response.text}")
             break
         except Exception as e:
-            interaction_log.append({"type": "error", "content": f"System Error during agentic loop: {str(e)}"})
+            await log_and_emit("error", f"System Error during agentic loop: {str(e)}")
             break
             
     return {"status": "completed", "log": interaction_log}

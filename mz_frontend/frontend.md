@@ -10,23 +10,22 @@ The workspace follows a semi-monorepo approach to maintain organization while al
 
 ## Backend Implementation (Python / FastAPI)
 * **Server (`mz_server.py`)**: Runs on `http://localhost:8000`.
-* **CORS**: Configured with `CORSMiddleware` to allow secure communication from the React frontend (running on port 5173).
-* **Endpoint**: The `/chat` POST endpoint receives `UserRequest` objects and triggers the agentic loop.
-* **Agentic Loop (`MZ_Terminal.py`)**: Modified to collect "thoughts," action results, and chat responses into a JSON-serializable log rather than printing directly to the terminal.
-* **Temporary Skill Execution**: The manual `(y/n)` confirmation for active skills in the `cerebellum` was temporarily disabled in the code to prevent the FastAPI server from hanging during API requests.
+* **CORS**: Configured with `CORSMiddleware` to allow secure communication from the React frontend.
+* **Core Logic (`mz_core.py`)**: The central brain containing the agentic loop, previously housed in the terminal. It now manages the execution of skills and senses.
+* **Communication (WebSockets)**: Moving from a standard POST endpoint to a WebSocket connection (`/ws/chat`) to allow real-time, bi-directional streaming of AI thoughts, actions, and user approvals without blocking the server.
 
 ## Frontend Implementation (React + Vite)
 * **Development Server**: Accessible at `http://localhost:5173`.
 * **Execution**: Can be started from the root using `npm run dev --prefix mz_frontend`.
 * **State Management**:
-    * `chatLog`: An array of objects tracking the conversation history and AI internal processes.
-    * `isLoading`: A boolean controlling UI states (disabling inputs) during active API calls.
+    * `chatLog`: An array of objects tracking the conversation history and AI internal processes in real-time.
+    * `connectionStatus`: Tracking the WebSocket connection state (Connected, Disconnected, Pending Approval).
 * **Core Features**:
-    * **Asynchronous Fetch**: Sends user input to the backend and appends the returned log to the state.
+    * **WebSocket Integration**: Maintains an open line to the backend, appending incoming thoughts, chat messages, and action results to the UI instantly.
     * **Auto-Scrolling**: Utilizes `useRef` and `useEffect` hooks to ensure the view stays pinned to the latest messages.
     * **Interface**: A monospace terminal-style layout that renders distinct log types: `[USER]`, `[THOUGHT]`, `[ACTION_RESULT]`, and `[CHAT]`.
 
 ## Roadmap for Next Sessions
 1. **Visual Refinement**: Implement a true "Mainframe" aesthetic using CSS (neon accents, terminal themes, and distinct color coding for AI thoughts vs. actions).
-2. **UI Approval System**: Re-implement the skill confirmation step by having the server pause and return a "pending approval" status, which the React UI will handle with interactive "Approve/Deny" buttons.
+2. **UI Approval System (Real-Time)**: Implement the skill confirmation step via WebSockets. The server will pause the loop, stream a "pending approval" request to the UI, and wait for the user to click "Approve" or "Deny" before continuing execution.
 3. **Profession-Based Routing**: Integrate `react-router` to support unique interfaces for different "Professions" (e.g., specialized 3D controls for the Blender agent).

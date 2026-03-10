@@ -1,7 +1,9 @@
 
 BACK END
-python mz_server.py
+uvicorn mz_server:app --reload
 
 FRONT END
 npm run dev --prefix mz_frontend
 
+Terminal
+python mz_terminal.py
