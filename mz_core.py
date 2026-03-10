@@ -6,6 +6,7 @@ import asyncio
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Import utility functions
 from core_utils.actions_scanner import get_available_actions
@@ -16,11 +17,12 @@ load_dotenv()
 # We can keep a single client instance for the core to use
 _client = genai.Client()
 
-def create_chat_session():
-    """
-    Initializes and returns a new chat session with the specific engine (Gemini).
-    The server/terminal don't need to know the implementation details.
-    """
+# Global variable to hold the current session's log file path
+_current_log_file = None
+
+def create_chat_session(model_name: str = 'gemini-2.5-flash'):
+    global _current_log_file
+    
     try:
         with open("system_prompt.md", "r", encoding="utf-8") as f:
             system_rules = f.read()
@@ -28,14 +30,44 @@ def create_chat_session():
         system_rules = "You are a helpful AI."
         print("[Core Warning: system_prompt.md not found]")
 
+    # Generate a unique ID for this specific session based on time
+    session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    os.makedirs(".logs", exist_ok=True)
+    
+    # Set the log file name for this specific chat instance
+    _current_log_file = os.path.join(".logs", f"session_{session_id}_{model_name}.jsonl")
+    print(f"[Core] Started new session log: {_current_log_file}")
+
+    log_pipeline_step("system", f"Chat session initialized with model '{model_name}' and system rules loaded.")
+
     return _client.chats.create(
-        model='gemini-2.5-flash',
+        model=model_name,
         config=types.GenerateContentConfig(
             system_instruction=system_rules,
             temperature=0.1,
             response_mime_type="application/json",
         )
     )
+
+def log_pipeline_step(step_type: str, content: any):
+    """
+    Appends a raw interaction step to the active session's JSONL log file.
+    """
+    if not _current_log_file:
+        return # Safety check: don't log if session isn't initialized
+        
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "step_type": step_type,
+        "content": content
+    }
+    
+    try:
+        with open(_current_log_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"[Core Warning] Failed to write to pipeline log: {e}")
+
 
 def enrich_prompt(user_input: str) -> str:
     """
@@ -110,17 +142,25 @@ async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dic
     """
     Runs the interaction loop with the AI asynchronously.
     Calls emit_callback(dict) if provided to stream logs in real-time.
+    Now deeply logs all backend activity and frontend emits to the JSONL file.
     """
     loop_counter = 0
     max_loops = 3 
     interaction_log = []
 
-    # Helper function to log internally and emit to the outside world immediately
+    # Helper function to log internally, save to JSONL, and emit to the outside world
     async def log_and_emit(item_type: str, content: str):
         item = {"type": item_type, "content": content}
         interaction_log.append(item)
+        
+        # Save to our pipeline log file so we have a permanent record
+        log_pipeline_step(f"ui_emit_{item_type}", content)
+        
         if emit_callback:
             await emit_callback(item)
+
+    # Log the full enriched prompt before we even enter the loop
+    log_pipeline_step("backend_enriched_prompt", current_prompt)
 
     while True:
         loop_counter += 1
@@ -129,8 +169,15 @@ async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dic
             break
 
         try:
+            # Log the exact prompt being sent to the AI API in this iteration
+            log_pipeline_step("backend_api_request", {"loop": loop_counter, "prompt": current_prompt})
+
             # Run the blocking Gemini call in a separate thread so we don't block the WebSocket
             response = await asyncio.to_thread(chat.send_message, current_prompt)
+            
+            # Log the raw string response straight from the AI, before any JSON parsing
+            log_pipeline_step("backend_api_response_raw", {"loop": loop_counter, "raw_text": response.text})
+
             ai_data = json.loads(response.text)
             
             thought = ai_data.get("thought_process", "")
@@ -144,6 +191,7 @@ async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dic
                 await log_and_emit("chat", chat_text)
 
             if action_type == "chat" or not actions_list:
+                log_pipeline_step("backend_loop_exit", "Action type is 'chat' or no actions provided. Exiting loop.")
                 break
 
             execution_summary = []
@@ -170,4 +218,6 @@ async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dic
             await log_and_emit("error", f"System Error during agentic loop: {str(e)}")
             break
             
+    log_pipeline_step("backend_loop_completed", {"total_loops": loop_counter})
+    
     return {"status": "completed", "log": interaction_log}

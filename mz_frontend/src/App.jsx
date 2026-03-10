@@ -16,7 +16,25 @@ function App() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-  
+
+  // Store the currently selected AI model
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+
+  // Triggered when the user picks a new model from the dropdown
+  const handleModelChange = (e) => {
+    const newModel = e.target.value;
+    setSelectedModel(newModel);
+    
+    // If we have an active connection, send the 'change_model' action to the Python router
+    if (wsRef.current && isConnected) {
+      const payload = {
+        action: "change_model",
+        model: newModel
+      };
+      wsRef.current.send(JSON.stringify(payload));
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [chatLog]);
@@ -60,8 +78,12 @@ function App() {
     // Show the user's message in the UI immediately
     setChatLog(prev => [...prev, { type: "user", content: userInput }]);
     
-    // Send the raw text to the server (our server expects text right now)
-    wsRef.current.send(userInput);
+    // Send the message as a structured JSON object for our Python router
+    const payload = {
+      action: "chat",
+      content: userInput
+    };
+    wsRef.current.send(JSON.stringify(payload));
     
     setUserInput("");
   };
@@ -69,7 +91,23 @@ function App() {
   return (
     <div style={{ padding: "20px", fontFamily: "monospace", maxWidth: "800px", margin: "0 auto" }}>
       <h1>Mainframe Zero Terminal</h1>
-      
+
+      {/* Dropdown for selecting the AI Engine with human-readable descriptions */}
+      <div style={{ marginBottom: "15px" }}>
+        <label htmlFor="modelSelect" style={{ marginRight: "10px", fontWeight: "bold" }}>Active Engine:</label>
+        <select 
+          id="modelSelect"
+          value={selectedModel} 
+          onChange={handleModelChange}
+          disabled={!isConnected}
+          style={{ padding: "5px", fontFamily: "monospace", borderRadius: "4px" }}
+        >
+          <option value="gemini-2.5-pro">Deep thinking & complex coding (Gemini 2.5 Pro)</option>
+          <option value="gemini-2.5-flash">Fast & fluent conversation (Gemini 2.5 Flash)</option>
+          <option value="gemini-2.5-flash-lite">Ultra-fast simple tasks (Gemini 2.5 Flash-Lite)</option>
+        </select>
+      </div>
+
       <div style={{ 
         border: "1px solid #ccc", 
         padding: "10px", 

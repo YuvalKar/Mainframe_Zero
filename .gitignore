@@ -13,5 +13,9 @@ env/
 .env
 .env.*
 
+# Logs
+.logs
+.logs/*
+
 # VS Code local settings
 .vscode/
