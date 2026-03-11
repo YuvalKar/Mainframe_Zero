@@ -125,6 +125,9 @@ def enrich_prompt(user_input: str) -> str:
     Orchestrates the context injection: Files (@), Skills, and Senses dynamically.
     Returns the enriched string without printing anything to the console.
     """
+    # 1. Bring in the global attention state to know which app is running
+    global _active_attention 
+    
     file_matches = re.findall(r'@([\w\.\-\/]+)', user_input)
     enriched_prompt = user_input
     
@@ -140,8 +143,20 @@ def enrich_prompt(user_input: str) -> str:
                     enriched_prompt += f"\n[System Error: Could not read '{filename}': {e}]\n"
         enriched_prompt += "------------------------------\n"
 
-    # Inject Available Actions (Skills from Cerebellum)
-    current_skills = get_available_actions("cerebellum")
+    # 2. Determine the active app name to build dynamic paths
+    app_name = None
+    if _active_attention:
+        app_name = _active_attention.get("required_app")
+
+    # 3. Inject Available Actions (Skills from Cerebellum)
+    current_skills = get_available_actions("cerebellum") # Scan core directory
+    
+    if app_name:
+        # Scan app-specific directory and merge into current_skills
+        app_skills_path = os.path.join("apps", app_name, "cerebellum")
+        app_skills = get_available_actions(app_skills_path)
+        current_skills.update(app_skills) 
+
     enriched_prompt += "\n\n[System Context: Available Actions in Cerebellum]\n"
     if current_skills:
         for name, desc in current_skills.items():
@@ -149,8 +164,15 @@ def enrich_prompt(user_input: str) -> str:
     else:
         enriched_prompt += "No skills available.\n\n"
     
-    # Inject Available Senses
-    current_senses = get_available_actions("senses")
+    # 4. Inject Available Senses
+    current_senses = get_available_actions("senses") # Scan core directory
+    
+    if app_name:
+        # Scan app-specific directory and merge into current_senses
+        app_senses_path = os.path.join("apps", app_name, "senses")
+        app_senses = get_available_actions(app_senses_path)
+        current_senses.update(app_senses)
+
     enriched_prompt += "[System Context: Available Senses]\n"
     if current_senses:
         for name, desc in current_senses.items():
