@@ -130,7 +130,7 @@ def enrich_prompt(user_input: str) -> str:
     # 1. Bring in the global attention state to know which app is running
     global _active_attention 
     
-    file_matches = re.findall(r'@([\w\.\-\/]+)', user_input)
+    file_matches = re.findall(r'@([\w\.\-\/\\]+)', user_input)
     enriched_prompt = user_input
     
     if file_matches:
@@ -145,6 +145,8 @@ def enrich_prompt(user_input: str) -> str:
                     enriched_prompt += f"\n[System Error: Could not read '{filename}': {e}]\n"
         enriched_prompt += "------------------------------\n"
 
+    #TBD YUVAL - inject skills only once in attention shift, not on every prompt enrichment. We can keep track of this in the attention state.!!!!!
+    
     # 2. Determine the active app name to build dynamic paths
     app_name = None
     if _active_attention:
@@ -236,7 +238,54 @@ def execute_single_action(action_name: str, action_data: dict) -> str:
         return f"Action '{action_name}': {res}"
     except Exception as ex:
         return f"Action '{action_name}': Execution failed - {str(ex)}"
+    
+############################################
+def execute_direct(action_name: str, action_data: dict) -> dict:
+    """
+    Sister function to execute_single_action.
+    Executes a sense/skill and returns the RAW dictionary result.
+    Perfect for UI requests via WebSocket.
+    """
+    global _active_attention
+    target_path = None
+    app_name = None
 
+    # 1. Check if there's an active app based on current attention
+    if _active_attention:
+        app_name = _active_attention.get("required_app")
+
+    # 2. Define the search paths (App specific first, then core)
+    search_paths = []
+    if app_name:
+        search_paths.extend([
+            os.path.join("apps", app_name, "cerebellum"),
+            os.path.join("apps", app_name, "senses"),
+        ])
+
+    search_paths.extend(["cerebellum", "senses"])
+
+    # 3. Search for the action file
+    for base_path in search_paths:
+        potential_path = os.path.join(base_path, f"{action_name}.py")
+        if os.path.exists(potential_path):
+            target_path = potential_path
+            break 
+
+    if not target_path:
+        return {"success": False, "message": f"Action '{action_name}' Not Found."}
+        
+    try:
+        # 4. Dynamically load and execute
+        spec = importlib.util.spec_from_file_location(action_name, target_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        # 5. Return the raw data directly (No string wrapping!)
+        return module.execute(**action_data)
+        
+    except Exception as ex:
+        return {"success": False, "message": f"Execution failed: {str(ex)}"}
+    
 #########################################
 async def run_agentic_loop(chat, current_prompt: str, emit_callback=None) -> dict:
     """

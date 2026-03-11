@@ -49,6 +49,26 @@ async def handle_change_model(payload: dict, websocket: WebSocket, stream_callba
         "content": f"System: Successfully switched model to {new_model} and restarted session."
     })
 
+# Add this new function below handle_change_model
+async def handle_execute(payload: dict, websocket: WebSocket, stream_callback):
+    """
+    Handles generic direct executions from the UI, bypassing the AI agent loop.
+    Maps exactly to how the AI executes single actions.
+    """
+    action_name = payload.get("action_name")
+    action_data = payload.get("action_data", {})
+    print(f"[Server] UI requested direct execution for: {action_name}")
+    
+    # Call the core's direct execution method
+    result = mz_core.execute_direct(action_name, action_data)
+    
+    # Stream the raw data back to the frontend with a specific type flag
+    # so the frontend knows it's a direct result and not a chat message
+    await stream_callback({
+        "type": "direct_result",
+        "action_name": action_name,
+        "data": result
+    })
 
 # ==========================================
 # ROUTER DICTIONARY
@@ -56,7 +76,8 @@ async def handle_change_model(payload: dict, websocket: WebSocket, stream_callba
 # ==========================================
 ACTION_HANDLERS = {
     "chat": handle_chat,
-    "change_model": handle_change_model
+    "change_model": handle_change_model,
+    "execute": handle_execute  # The new generic pipe
 }
 
 

@@ -1,151 +1,78 @@
-import { useState, useRef, useEffect } from 'react'
+// src/App.jsx
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import Terminal from './components/Terminal'
+import FileExplorer from './components/FileExplorer'
 
 function App() {
-  const [chatLog, setChatLog] = useState([]);
-  const [userInput, setUserInput] = useState("");
-  // We don't strictly need isLoading for WebSockets in the same way, 
-  // but let's use it to disable inputs if disconnected.
-  const [isConnected, setIsConnected] = useState(false);
+  const [attentionShelf, setAttentionShelf] = useState([]);
   
-  const messagesEndRef = useRef(null);
-  // Store the WebSocket instance
+  // Lifted WebSocket State
+  const [isConnected, setIsConnected] = useState(false);
+  const [latestMessage, setLatestMessage] = useState(null);
   const wsRef = useRef(null);
 
-  // Scroll to bottom whenever chatLog changes
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Centralized WebSocket connection
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8000/ws/chat");
+    wsRef.current = ws;
 
-  // Store the currently selected AI model
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
-
-  // Triggered when the user picks a new model from the dropdown
-  const handleModelChange = (e) => {
-    const newModel = e.target.value;
-    setSelectedModel(newModel);
+    ws.onopen = () => setIsConnected(true);
     
-    // If we have an active connection, send the 'change_model' action to the Python router
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setLatestMessage(data); // Broadcast the incoming message to all children
+      } catch (err) {
+        console.error("Parse error:", err);
+      }
+    };
+
+    ws.onclose = () => setIsConnected(false);
+
+    // Cleanup on unmount
+    return () => ws.close();
+  }, []);
+
+  // Generic sender function passed to children
+  const sendCommand = (payload) => {
     if (wsRef.current && isConnected) {
-      const payload = {
-        action: "change_model",
-        model: newModel
-      };
       wsRef.current.send(JSON.stringify(payload));
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatLog]);
-
-  // Establish the WebSocket connection on component mount
-  useEffect(() => {
-    // Connect to the new endpoint
-    const ws = new WebSocket("ws://localhost:8000/ws/chat");
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsConnected(true);
-      setChatLog(prev => [...prev, { type: "system", content: "Connected to Mainframe Zero via WebSocket." }]);
-    };
-
-    // Listen for incoming messages from the server
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setChatLog(prev => [...prev, data]);
-      } catch (err) {
-        console.error("Failed to parse incoming message:", event.data);
+  const toggleAttention = (fileNode) => {
+    setAttentionShelf(prev => {
+      const exists = prev.find(f => f.path === fileNode.path);
+      if (exists) {
+        return prev.filter(f => f.path !== fileNode.path);
+      } else {
+        return [...prev, { ...fileNode, sent: false }];
       }
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-      setChatLog(prev => [...prev, { type: "system", content: "Disconnected from server." }]);
-    };
-
-    // Cleanup function when the component unmounts
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  // Send message through the open WebSocket
-  const sendMessage = () => {
-    if (!userInput.trim() || !wsRef.current || !isConnected) return;
-
-    // Show the user's message in the UI immediately
-    setChatLog(prev => [...prev, { type: "user", content: userInput }]);
-    
-    // Send the message as a structured JSON object for our Python router
-    const payload = {
-      action: "chat",
-      content: userInput
-    };
-    wsRef.current.send(JSON.stringify(payload));
-    
-    setUserInput("");
+    });
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "monospace", maxWidth: "800px", margin: "0 auto" }}>
-      <h1>Mainframe Zero Terminal</h1>
-
-      {/* Dropdown for selecting the AI Engine with human-readable descriptions */}
-      <div style={{ marginBottom: "15px" }}>
-        <label htmlFor="modelSelect" style={{ marginRight: "10px", fontWeight: "bold" }}>Active Engine:</label>
-        <select 
-          id="modelSelect"
-          value={selectedModel} 
-          onChange={handleModelChange}
-          disabled={!isConnected}
-          style={{ padding: "5px", fontFamily: "monospace", borderRadius: "4px" }}
-        >
-          <option value="gemini-2.5-pro">Deep thinking & complex coding (Gemini 2.5 Pro)</option>
-          <option value="gemini-2.5-flash">Fast & fluent conversation (Gemini 2.5 Flash)</option>
-          <option value="gemini-2.5-flash-lite">Ultra-fast simple tasks (Gemini 2.5 Flash-Lite)</option>
-        </select>
-      </div>
-
-      <div style={{ 
-        border: "1px solid #ccc", 
-        padding: "10px", 
-        height: "400px", 
-        overflowY: "auto", 
-        marginBottom: "10px",
-        backgroundColor: "#f9f9f9"
-      }}>
-        {chatLog.map((log, index) => (
-          <div key={index} style={{ marginBottom: "10px" }}>
-            <strong>[{log.type.toUpperCase()}]: </strong>
-            <span style={{ whiteSpace: "pre-wrap" }}>{log.content}</span>
-          </div>
-        ))}
-        
-        {!isConnected && <div style={{ color: "red" }}>[SYSTEM: Offline. Waiting for connection...]</div>}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div style={{ display: "flex", gap: "10px" }}>
-        <input 
-          type="text" 
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Enter command..."
-          disabled={!isConnected}
-          style={{ flex: 1, padding: "10px", fontFamily: "monospace" }}
+    <div style={{ height: "100vh", display: "flex", flexDirection: "row", backgroundColor: "#1e1e1e" }}>
+      
+      <FileExplorer 
+        attentionShelf={attentionShelf} 
+        toggleAttention={toggleAttention}
+        sendCommand={sendCommand}
+        latestMessage={latestMessage}
+        isConnected={isConnected}
+      />
+      
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <Terminal 
+          attentionShelf={attentionShelf} 
+          setAttentionShelf={setAttentionShelf}
+          sendCommand={sendCommand}
+          latestMessage={latestMessage}
+          isConnected={isConnected}
         />
-        <button 
-          onClick={sendMessage} 
-          disabled={!isConnected}
-          style={{ padding: "10px 20px", cursor: !isConnected ? "not-allowed" : "pointer" }}
-        >
-          Send
-        </button>
       </div>
+
     </div>
   )
 }
