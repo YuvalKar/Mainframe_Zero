@@ -71,6 +71,7 @@ def shift_attention(attention_id: str) -> bool:
         print(f"[Core Error] Could not load app '{app_name}'. Is it in the 'apps' folder? Error: {e}")
         return False
 
+#########################################
 def create_chat_session(model_name: str = 'gemini-2.5-flash'):
     global _current_log_file
     
@@ -100,6 +101,7 @@ def create_chat_session(model_name: str = 'gemini-2.5-flash'):
         )
     )
 
+##################################
 def log_pipeline_step(step_type: str, content: any):
     """
     Appends a raw interaction step to the active session's JSONL log file.
@@ -119,7 +121,7 @@ def log_pipeline_step(step_type: str, content: any):
     except Exception as e:
         print(f"[Core Warning] Failed to write to pipeline log: {e}")
 
-
+########################################
 def enrich_prompt(user_input: str) -> str:
     """
     Orchestrates the context injection: Files (@), Skills, and Senses dynamically.
@@ -186,21 +188,46 @@ def enrich_prompt(user_input: str) -> str:
 def execute_single_action(action_name: str, action_data: dict) -> str:
     """
     Locates the action file and executes it dynamically. 
+    Checks app-specific directories first, then falls back to core directories.
     Returns the execution result as a string (no direct prints).
     """
+    global _active_attention
     target_path = None
-    
-    if os.path.exists(os.path.join("cerebellum", f"{action_name}.py")):
-        target_path = os.path.join("cerebellum", f"{action_name}.py")
-    elif os.path.exists(os.path.join("senses", f"{action_name}.py")):
-        target_path = os.path.join("senses", f"{action_name}.py")
-    elif os.path.exists(os.path.join("hippocampus", f"{action_name}.py")):
-        target_path = os.path.join("hippocampus", f"{action_name}.py")
+    app_name = None
+
+    if _active_attention:
+        app_name = _active_attention.get("required_app")
+
+    # 1. Define the possible directory paths to search
+    search_paths = []
+
+    # App-specific paths get priority (specialized skills over general ones)
+    if app_name:
+        search_paths.extend([
+            os.path.join("apps", app_name, "cerebellum"),
+            os.path.join("apps", app_name, "senses"),
+            # os.path.join("apps", app_name, "hippocampus")
+        ])
+
+    # Core paths as fallback
+    search_paths.extend([
+        "cerebellum",
+        "senses",
+        # "hippocampus"
+    ])
+
+    # 2. Search for the action file in the defined paths
+    for base_path in search_paths:
+        potential_path = os.path.join(base_path, f"{action_name}.py")
+        if os.path.exists(potential_path):
+            target_path = potential_path
+            break # Found the file, stop searching
 
     if not target_path:
         return f"Action '{action_name}': Failed (Not Found in any known directory)"
         
     try:
+        # 3. Dynamically load and execute the module
         spec = importlib.util.spec_from_file_location(action_name, target_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)

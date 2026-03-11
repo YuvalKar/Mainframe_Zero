@@ -1,5 +1,5 @@
 """
-SENSE: ping_blender_sense
+SENSE: sense_ping
 PURPOSE: A basic sense to check if the blender_for_uefn app is alive and responding, acting as a simple connection verification.
          
 WHEN TO USE: 
