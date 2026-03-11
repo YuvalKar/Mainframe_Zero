@@ -19,3 +19,6 @@ env/
 
 # VS Code local settings
 .vscode/
+
+# attentions - store all attention, tasks,chats, here
+.attentions/
