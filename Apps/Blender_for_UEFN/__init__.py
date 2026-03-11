@@ -1,8 +1,22 @@
 # apps/blender_for_uefn/__init__.py
 
-def register_to_core(core_system):
-    # Register Blender specific capabilities to the main system
-    # This will be triggered when Attention shifts to this app
+def register_to_core(core_system, attention_data):
+    """
+    The main entry point for the Blender UEFN app.
+    This function is called by the Core when Attention shifts to this app.
+    """
+    app_name = "Blender_for_UEFN"
+    task_name = attention_data.get("name", "Unknown Task")
+    workspace_dir = attention_data.get("attention_dir", "Unknown Path")
     
-    # TODO: Import and register specific actions from local cerebellum and senses
-    pass
+    print(f"\n[{app_name}] Waking up...")
+    print(f"[{app_name}] Focusing on task: '{task_name}'")
+    print(f"[{app_name}] Workspace mounted at: {workspace_dir}")
+    
+    # TODO: Register specific 'senses' to the core_system (e.g., read_blend_file)
+    # TODO: Register specific 'motor skills' to the core cerebellum (e.g., generate_mesh)
+    
+    print(f"[{app_name}] Registration complete. Ready for action.\n")
+    
+    # Return True to signal successful loading
+    return True

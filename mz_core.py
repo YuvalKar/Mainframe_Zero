@@ -7,6 +7,8 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 from datetime import datetime
+from attention_manager import AttentionManager
+import sys
 
 # Import utility functions
 from core_utils.actions_scanner import get_available_actions
@@ -19,6 +21,55 @@ _client = genai.Client()
 
 # Global variable to hold the current session's log file path
 _current_log_file = None
+
+# Initialize the Attention Manager and state variables
+_attention_manager = AttentionManager()
+_active_attention = None
+_active_app_module = None
+
+def shift_attention(attention_id: str) -> bool:
+    """
+    Loads an Attention context and dynamically mounts its required App.
+    """
+    global _active_attention, _active_app_module
+    
+    # 1. Load the attention metadata
+    attn_data = _attention_manager.load_attention(attention_id)
+    if not attn_data:
+        print(f"[Core Error] Attention ID '{attention_id}' not found.")
+        return False
+        
+    _active_attention = attn_data
+    app_name = attn_data.get("required_app")
+    
+    print(f"\n[Core] Shifting attention to: '{attn_data.get('name')}'")
+    print(f"[Core] Required App: {app_name}")
+    
+    # 2. Dynamically import the app module
+    try:
+        # We assume apps are located in the 'apps' directory
+        module_path = f"apps.{app_name}"
+        app_module = importlib.import_module(module_path)
+        
+        # 3. Call the app's contract function to register it
+        if hasattr(app_module, 'register_to_core'):
+            # Pass the current core module (sys.modules[__name__]) and the context
+            current_core = sys.modules[__name__]
+            success = app_module.register_to_core(current_core, attn_data)
+            
+            if success:
+                _active_app_module = app_module
+                return True
+            else:
+                print(f"[Core Error] App '{app_name}' failed during registration.")
+                return False
+        else:
+            print(f"[Core Error] App '{app_name}' is missing the 'register_to_core' function.")
+            return False
+            
+    except ImportError as e:
+        print(f"[Core Error] Could not load app '{app_name}'. Is it in the 'apps' folder? Error: {e}")
+        return False
 
 def create_chat_session(model_name: str = 'gemini-2.5-flash'):
     global _current_log_file
