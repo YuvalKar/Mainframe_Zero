@@ -14,7 +14,7 @@ INPUTS:
 """
 
 import json
-from core_utils.memory_db import get_db_connection
+from database.db_connection import get_db_connection
 
 def execute(filter_dict: dict, limit: int = 10) -> dict:
     # We need something to filter by, or at least a conscious decision to pull all

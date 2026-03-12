@@ -1,88 +1,67 @@
-import os
-import json
 import uuid
+from database.db_attention import (
+    create_attention_record,
+    get_attention_record,
+    search_attentions_db,
+    bump_attention
+)
 
 class AttentionManager:
-    def __init__(self, base_dir=".attentions"):
+    def __init__(self):
         """
-        Initialize the manager. Sets up the base directory for all isolated workspaces.
+        Initialize the manager.
+        We no longer use local folders; everything is managed via PostgreSQL.
         """
-        self.base_dir = base_dir
-        
-        # Ensure the base directory exists
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir)
+        # The base_dir and os.makedirs are gone! 
+        pass
 
-    def create_attention(self, name, target_app, tags=None):
+    def create_attention(self, name: str, required_app: str = None, parent_id: str = None, tags: list = None):
         """
-        Creates a new Attention workspace and saves its metadata.
+        Creates a new Attention node in the database.
+        Returns the newly created attention dictionary if successful.
         """
         if tags is None:
             tags = []
             
         attention_id = f"attn_{uuid.uuid4().hex[:8]}"
-        attention_dir = os.path.join(self.base_dir, attention_id)
-        os.makedirs(attention_dir, exist_ok=True)
         
-        attention_data = {
-            "id": attention_id,
-            "name": name,
-            "required_app": target_app,
-            "attention_dir": attention_dir,
-            "tags": tags,
-            "chat_history": [], 
-            "status": "ready"
-        }
+        # Insert into the database
+        success = create_attention_record(
+            attention_id=attention_id,
+            name=name,
+            required_app=required_app,
+            parent_id=parent_id,
+            tags=tags
+        )
         
-        self._save_metadata(attention_dir, attention_data)
-        return attention_data
+        if success:
+            # Load it right back to get the full record with timestamps
+            return self.load_attention(attention_id)
+        
+        print(f"[AttentionManager] Error: Could not create attention '{name}'")
+        return None
 
-    def load_attention(self, attention_id):
+    def load_attention(self, attention_id: str) -> dict:
         """
-        Loads an existing Attention by its ID.
+        Loads an existing Attention by its ID and bumps its updated_at timestamp.
         """
-        attention_dir = os.path.join(self.base_dir, attention_id)
-        metadata_path = os.path.join(attention_dir, "attention_meta.json")
+        record = get_attention_record(attention_id)
         
-        if not os.path.exists(metadata_path):
-            return None
+        if record:
+            # The "Bump" - Every time we load an attention, it becomes the most recent
+            bump_attention(attention_id)
+            return record
             
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        print(f"[AttentionManager] Warning: Attention '{attention_id}' not found.")
+        return None
 
-    def search_attentions(self, app_filter=None, tag_filter=None, name_filter=None):
+    def search_attentions(self, app_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
         """
-        Scans the base directory and returns a list of Attentions matching the criteria.
+        Searches the database for Attentions matching the criteria.
+        Results are automatically ordered by the most recently updated.
         """
-        results = []
-        
-        # Iterate over all folders in the base directory
-        for folder_name in os.listdir(self.base_dir):
-            attention_dir = os.path.join(self.base_dir, folder_name)
-            metadata_path = os.path.join(attention_dir, "attention_meta.json")
-            
-            if os.path.isfile(metadata_path):
-                with open(metadata_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                # Apply filters
-                if app_filter and data.get("required_app") != app_filter:
-                    continue
-                    
-                if tag_filter and tag_filter not in data.get("tags", []):
-                    continue
-                    
-                if name_filter and name_filter.lower() not in data.get("name", "").lower():
-                    continue
-                    
-                results.append(data)
-                
-        return results
-
-    def _save_metadata(self, attention_dir, data):
-        """
-        Internal helper to save the JSON metadata.
-        """
-        metadata_path = os.path.join(attention_dir, "attention_meta.json")
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
+        return search_attentions_db(
+            app_filter=app_filter, 
+            tag_filter=tag_filter, 
+            name_filter=name_filter
+        )

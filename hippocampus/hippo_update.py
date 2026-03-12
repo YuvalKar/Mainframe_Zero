@@ -14,7 +14,7 @@ INPUTS:
 """
 
 import json
-from core_utils.memory_db import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, get_local_model
 
 def execute(memory_id: int, new_content: str, new_metadata: dict = None) -> dict:
     # Ensure we have both an ID and new content to update

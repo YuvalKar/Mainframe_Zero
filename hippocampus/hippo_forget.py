@@ -12,7 +12,7 @@ INPUTS:
 - memory_id (int): The unique ID of the memory you want to delete.
 """
 
-from core_utils.memory_db import get_db_connection
+from database.db_connection import get_db_connection
 
 def execute(memory_id: int) -> dict:
     # Ensure a valid memory ID is provided

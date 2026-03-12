@@ -16,7 +16,7 @@ INPUTS:
 """
 
 import json
-from core_utils.memory_db import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, get_local_model
 
 def execute(content: str, metadata: dict = None) -> dict:
     # Ensure there is content to save

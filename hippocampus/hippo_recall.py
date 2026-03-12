@@ -19,7 +19,7 @@ INPUTS:
 """
 
 import json
-from core_utils.memory_db import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, get_local_model
 
 def execute(query: str, limit: int = 3, filter_dict: dict = None) -> dict:
     # Ensure there is a query to search for

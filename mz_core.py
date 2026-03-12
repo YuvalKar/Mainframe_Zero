@@ -14,7 +14,7 @@ import sys
 from core_utils.actions_scanner import get_available_actions
 
 # Import memory DB functions for short-term history
-from core_utils.memory_db import save_chat_history_turn, get_recent_chat_history
+from database.db_chat_history import save_chat_history_turn, get_recent_chat_history
 
 # Load environment variables where the core actually needs them
 load_dotenv()
