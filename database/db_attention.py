@@ -15,12 +15,10 @@ def init_attentions_db():
     try:
         cursor = conn.cursor()
         
-        # Drop the table if it exists (CASCADE ensures we also drop dependent rows if needed)
         cursor.execute("DROP TABLE IF EXISTS attentions CASCADE;")
         print("[System: Existing 'attentions' table dropped (if it existed).]")
         
-        # Create the hierarchical table
-        # Notice how parent_id references the id of the same table
+        # Added short_summary, detailed_summary, and working_files
         create_table_query = """
         CREATE TABLE attentions (
             id VARCHAR(50) PRIMARY KEY,
@@ -29,12 +27,14 @@ def init_attentions_db():
             required_app VARCHAR(100),
             tags JSONB DEFAULT '[]'::jsonb,
             status VARCHAR(50) DEFAULT 'ready',
+            short_summary TEXT,
+            detailed_summary TEXT,
+            working_files JSONB DEFAULT '[]'::jsonb,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
         """
         
-        # Create an index on parent_id to make tree traversal (LOD fetching) blazing fast
         create_index_query = """
         CREATE INDEX idx_attentions_parent ON attentions(parent_id);
         """
@@ -57,7 +57,9 @@ def init_attentions_db():
 #### Attention DB Operations #######
 
 def create_attention_record(attention_id: str, name: str, required_app: str = None, 
-                            parent_id: str = None, tags: list = None):
+                            parent_id: str = None, tags: list = None,
+                            short_summary: str = None, detailed_summary: str = None, 
+                            working_files: list = None):
     """
     Inserts a new Attention node into the database.
     If parent_id is None, it acts as a root node.
@@ -69,15 +71,17 @@ def create_attention_record(attention_id: str, name: str, required_app: str = No
     try:
         cursor = conn.cursor()
         
-        # Ensure tags are stored as a JSON string for the JSONB column
         tags_json = json.dumps(tags) if tags else '[]'
+        files_json = json.dumps(working_files) if working_files else '[]'
         
         insert_query = """
-        INSERT INTO attentions (id, parent_id, name, required_app, tags, status)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO attentions (id, parent_id, name, required_app, tags, status, 
+                              short_summary, detailed_summary, working_files)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
-        cursor.execute(insert_query, (attention_id, parent_id, name, required_app, tags_json, "ready"))
+        cursor.execute(insert_query, (attention_id, parent_id, name, required_app, 
+                                      tags_json, "ready", short_summary, detailed_summary, files_json))
         conn.commit()
         return True
         
@@ -95,7 +99,7 @@ def create_attention_record(attention_id: str, name: str, required_app: str = No
 
 def get_attention_record(attention_id: str) -> dict:
     """
-    Retrieves a single Attention node by its ID, including the updated_at timestamp.
+    Retrieves a single Attention node by its ID.
     """
     conn = get_db_connection()
     if not conn:
@@ -104,9 +108,10 @@ def get_attention_record(attention_id: str) -> dict:
     try:
         cursor = conn.cursor()
         
-        # Added updated_at to the SELECT query
         select_query = """
-        SELECT id, parent_id, name, required_app, tags, status, created_at, updated_at
+        SELECT id, parent_id, name, required_app, tags, status, 
+               short_summary, detailed_summary, working_files, 
+               created_at, updated_at
         FROM attentions
         WHERE id = %s
         """
@@ -117,16 +122,18 @@ def get_attention_record(attention_id: str) -> dict:
         if not row:
             return None
             
-        # Map the tuple to a dictionary for easy use in Python
         return {
             "id": row[0],
             "parent_id": row[1],
             "name": row[2],
             "required_app": row[3],
-            "tags": row[4],  # psycopg2 automatically parses JSONB to a Python list/dict
+            "tags": row[4],
             "status": row[5],
-            "created_at": row[6].isoformat() if row[6] else None,
-            "updated_at": row[7].isoformat() if row[7] else None
+            "short_summary": row[6],
+            "detailed_summary": row[7],
+            "working_files": row[8],
+            "created_at": row[9].isoformat() if row[9] else None,
+            "updated_at": row[10].isoformat() if row[10] else None
         }
         
     except Exception as e:
@@ -142,7 +149,6 @@ def get_attention_record(attention_id: str) -> dict:
 def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
     """
     Searches the attentions table based on optional filters.
-    Orders by updated_at to show the most recently used contexts first.
     """
     conn = get_db_connection()
     if not conn:
@@ -151,26 +157,26 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
     try:
         cursor = conn.cursor()
         
-        # Added updated_at to the SELECT query
-        query = "SELECT id, parent_id, name, required_app, tags, status, created_at, updated_at FROM attentions WHERE 1=1"
+        query = """
+        SELECT id, parent_id, name, required_app, tags, status, 
+               short_summary, detailed_summary, working_files, 
+               created_at, updated_at 
+        FROM attentions WHERE 1=1
+        """
         params = []
         
-        # Add filters dynamically
         if app_filter:
             query += " AND required_app = %s"
             params.append(app_filter)
             
         if name_filter:
-            # ILIKE is PostgreSQL's case-insensitive search
             query += " AND name ILIKE %s"
             params.append(f"%{name_filter}%")
             
         if tag_filter:
-            # The @> operator checks if the JSONB array contains the specified element
             query += " AND tags @> %s::jsonb"
             params.append(json.dumps([tag_filter]))
             
-        # Order by the most recently updated first, not by creation date
         query += " ORDER BY updated_at DESC"
 
         cursor.execute(query, tuple(params))
@@ -185,8 +191,11 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
                 "required_app": row[3],
                 "tags": row[4],
                 "status": row[5],
-                "created_at": row[6].isoformat() if row[6] else None,
-                "updated_at": row[7].isoformat() if row[7] else None
+                "short_summary": row[6],
+                "detailed_summary": row[7],
+                "working_files": row[8],
+                "created_at": row[9].isoformat() if row[9] else None,
+                "updated_at": row[10].isoformat() if row[10] else None
             })
             
         return results
@@ -203,8 +212,7 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
 
 def bump_attention(attention_id: str) -> bool:
     """
-    Updates the 'updated_at' timestamp of a specific Attention node to CURRENT_TIMESTAMP.
-    This ensures it floats to the top of recent searches.
+    Updates the 'updated_at' timestamp of a specific Attention node.
     """
     conn = get_db_connection()
     if not conn:
@@ -213,7 +221,6 @@ def bump_attention(attention_id: str) -> bool:
     try:
         cursor = conn.cursor()
         
-        # Update only the updated_at column
         update_query = """
         UPDATE attentions 
         SET updated_at = CURRENT_TIMESTAMP
@@ -223,7 +230,6 @@ def bump_attention(attention_id: str) -> bool:
         cursor.execute(update_query, (attention_id,))
         conn.commit()
         
-        # Check if any row was actually updated
         if cursor.rowcount == 0:
             print(f"[Memory DB Warning: Tried to bump attention '{attention_id}' but it was not found.]")
             return False
@@ -241,6 +247,176 @@ def bump_attention(attention_id: str) -> bool:
         if conn:
             conn.close()
 
+def update_attention_record(attention_id: str, **kwargs) -> bool:
+    """
+    Updates specific fields of an Attention record dynamically.
+    Automatically bumps the updated_at timestamp.
+    
+    Example usage:
+    update_attention_record('attn_123', short_summary="New status", status="archived")
+    """
+    if not kwargs:
+        # If no fields were passed to update, just bump the timestamp
+        return bump_attention(attention_id)
+        
+    conn = get_db_connection()
+    if not conn:
+        return False
+        
+    try:
+        cursor = conn.cursor()
+        
+        # Whitelist of allowed columns to prevent SQL injection or accidental typos
+        allowed_columns = {
+            'name', 'parent_id', 'required_app', 'status', 
+            'short_summary', 'detailed_summary', 'tags', 'working_files'
+        }
+        
+        set_clauses = []
+        values = []
+        
+        for key, value in kwargs.items():
+            if key in allowed_columns:
+                set_clauses.append(f"{key} = %s")
+                # Handle JSONB fields gracefully
+                if key in ('tags', 'working_files'):
+                    values.append(json.dumps(value) if value is not None else '[]')
+                else:
+                    values.append(value)
+                    
+        if not set_clauses:
+            return bump_attention(attention_id)
+            
+        # The ultimate Bump: Always update the timestamp when modifying data
+        set_clauses.append("updated_at = CURRENT_TIMESTAMP")
+        
+        query = f"""
+        UPDATE attentions 
+        SET {', '.join(set_clauses)}
+        WHERE id = %s
+        """
+        values.append(attention_id)
+        
+        cursor.execute(query, tuple(values))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            print(f"[Memory DB Warning: Tried to update attention '{attention_id}' but it was not found.]")
+            return False
+            
+        return True
+        
+    except Exception as e:
+        print(f"[Memory DB Error: Failed to update attention record - {e}]")
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def get_attention_context_tree(attention_id: str) -> dict:
+    """
+    Retrieves the Level of Detail (LOD) context tree for a given Attention ID.
+    Includes summaries and working files for context generation.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+        
+    try:
+        cursor = conn.cursor()
+        
+        query = """
+        WITH RECURSIVE
+        tree_up AS (
+            SELECT id, parent_id, name, required_app, tags, status, 
+                   short_summary, detailed_summary, working_files, 
+                   0 AS lod_level, 'self'::text AS relation
+            FROM attentions WHERE id = %s
+            UNION
+            SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
+                   a.short_summary, a.detailed_summary, a.working_files,
+                   tu.lod_level + 1, 'parent'::text
+            FROM attentions a
+            INNER JOIN tree_up tu ON a.id = tu.parent_id
+            WHERE tu.lod_level < 2 
+        ),
+        tree_down AS (
+            SELECT id, parent_id, name, required_app, tags, status, 
+                   short_summary, detailed_summary, working_files,
+                   0 AS lod_level, 'self'::text AS relation
+            FROM attentions WHERE id = %s
+            UNION
+            SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
+                   a.short_summary, a.detailed_summary, a.working_files,
+                   td.lod_level + 1, 'child'::text
+            FROM attentions a
+            INNER JOIN tree_down td ON a.parent_id = td.id
+            WHERE td.lod_level < 2 
+        ),
+        siblings AS (
+            SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
+                   a.short_summary, a.detailed_summary, a.working_files,
+                   1 AS lod_level, 'sibling'::text AS relation
+            FROM attentions a
+            WHERE a.parent_id = (SELECT parent_id FROM attentions WHERE id = %s)
+              AND a.id != %s
+              AND a.parent_id IS NOT NULL
+        )
+        SELECT * FROM tree_up
+        UNION
+        SELECT * FROM tree_down WHERE relation != 'self'
+        UNION
+        SELECT * FROM siblings
+        ORDER BY lod_level ASC, relation ASC;
+        """
+        
+        cursor.execute(query, (attention_id, attention_id, attention_id, attention_id))
+        rows = cursor.fetchall()
+        
+        context_tree = {
+            "lod_0_self": None,
+            "lod_1_relatives": [],
+            "lod_2_distant": []
+        }
+        
+        for row in rows:
+            node = {
+                "id": row[0],
+                "parent_id": row[1],
+                "name": row[2],
+                "required_app": row[3],
+                "tags": row[4],
+                "status": row[5],
+                "short_summary": row[6],
+                "detailed_summary": row[7],
+                "working_files": row[8],
+                "relation": row[10] # row[9] is lod_level
+            }
+            
+            lod_level = row[9]
+            
+            if lod_level == 0:
+                context_tree["lod_0_self"] = node
+            elif lod_level == 1:
+                context_tree["lod_1_relatives"].append(node)
+            elif lod_level == 2:
+                context_tree["lod_2_distant"].append(node)
+                
+        return context_tree
+        
+    except Exception as e:
+        print(f"[Memory DB Error: Failed to fetch context tree - {e}]")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            
 ##################################
 if __name__ == "__main__":
     # Run this once to create the new table with updated_at

@@ -3,7 +3,9 @@ from database.db_attention import (
     create_attention_record,
     get_attention_record,
     search_attentions_db,
-    bump_attention
+    bump_attention,
+    update_attention_record,
+    get_attention_context_tree
 )
 
 class AttentionManager:
@@ -12,26 +14,31 @@ class AttentionManager:
         Initialize the manager.
         We no longer use local folders; everything is managed via PostgreSQL.
         """
-        # The base_dir and os.makedirs are gone! 
         pass
 
-    def create_attention(self, name: str, required_app: str = None, parent_id: str = None, tags: list = None):
+    def create_attention(self, name: str, required_app: str = None, parent_id: str = None, 
+                         tags: list = None, short_summary: str = None, 
+                         detailed_summary: str = None, working_files: list = None):
         """
-        Creates a new Attention node in the database.
+        Creates a new Attention node in the database with full state support.
         Returns the newly created attention dictionary if successful.
         """
         if tags is None:
             tags = []
+        if working_files is None:
+            working_files = []
             
         attention_id = f"attn_{uuid.uuid4().hex[:8]}"
         
-        # Insert into the database
         success = create_attention_record(
             attention_id=attention_id,
             name=name,
             required_app=required_app,
             parent_id=parent_id,
-            tags=tags
+            tags=tags,
+            short_summary=short_summary,
+            detailed_summary=detailed_summary,
+            working_files=working_files
         )
         
         if success:
@@ -65,3 +72,23 @@ class AttentionManager:
             tag_filter=tag_filter, 
             name_filter=name_filter
         )
+
+    def update_attention(self, attention_id: str, **kwargs) -> bool:
+        """
+        Updates specific fields of an Attention (e.g., short_summary, working_files).
+        Automatically bumps the updated_at timestamp.
+        """
+        success = update_attention_record(attention_id, **kwargs)
+        if not success:
+            print(f"[AttentionManager] Warning: Failed to update attention '{attention_id}'.")
+        return success
+
+    def get_lod_context(self, attention_id: str) -> dict:
+        """
+        Retrieves the full Level of Detail (LOD) tree for the AI's context window.
+        Includes self (LOD 0), relatives (LOD 1), and distant nodes (LOD 2).
+        """
+        tree = get_attention_context_tree(attention_id)
+        if not tree:
+            print(f"[AttentionManager] Warning: Could not fetch LOD tree for '{attention_id}'.")
+        return tree
