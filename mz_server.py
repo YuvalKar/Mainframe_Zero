@@ -40,8 +40,7 @@ async def handle_change_model(payload: dict, websocket: WebSocket, stream_callba
     new_model = payload.get("model", "gemini-2.5-flash") # Fallback to flash
     print(f"[Server] Switching model to: {new_model}")
     
-    # Re-initialize the brain with the new model
-    mz_chat_session = mz_core.create_chat_session(new_model)
+    mz_chat_session = mz_core.init_session(new_model)
     
     # Notify the frontend that the switch was successful
     await stream_callback({
@@ -91,8 +90,7 @@ async def lifespan(app: FastAPI):
     print("[Server] Initializing Mainframe Zero Brain via Core...")
     
     try:
-        # Initializing with default model
-        mz_chat_session = mz_core.create_chat_session()
+        mz_chat_session = mz_core.init_session()
         print("[Server] Brain initialized successfully.")
     except Exception as e:
         print(f"[Server Error] Failed to initialize brain: {e}")
