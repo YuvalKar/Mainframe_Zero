@@ -22,13 +22,14 @@ async def handle_chat(payload: dict, websocket: WebSocket, stream_callback):
     user_input = payload.get("content", "")
     print(f"[Server] Processing chat input: {user_input}")
     
-    # Step 1: Enrich the prompt
-    final_prompt = mz_core.enrich_prompt(user_input)
+    # 1. Pass the session context (mz_chat_session) to enrich_prompt
+    final_prompt = mz_core.enrich_prompt(mz_chat_session, user_input)
     
-    # Step 2: Run loop and stream results live to the React UI
+    # 2. Pass mz_chat_session and raw_user_input to the loop
     await mz_core.run_agentic_loop(
         mz_chat_session, 
         final_prompt, 
+        raw_user_input=user_input, # We need this to save the history!
         emit_callback=stream_callback
     )
 

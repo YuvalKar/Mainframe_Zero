@@ -35,7 +35,7 @@ def terminal_chat():
                 continue
 
             # Step 1: Enrich the user prompt via core
-            final_prompt = mz_core.enrich_prompt(user_input)
+            final_prompt = mz_core.enrich_prompt(session_ctx, user_input)
 
             # Callback to print immediately to the terminal
             async def print_stream(item):
@@ -52,9 +52,8 @@ def terminal_chat():
                 elif item_type == "system": 
                     print(f"\n[System]: {content}")
 
-            # Step 2: Run the stateless loop
-            # Pass session_ctx instead of the old chat object
-            await mz_core.run_agentic_loop(session_ctx, final_prompt, emit_callback=print_stream)
+            # Step 2: Run the stateless loop (now passing the raw user_input too)
+            await mz_core.run_agentic_loop(session_ctx, final_prompt, raw_user_input=user_input, emit_callback=print_stream)
 
     # Boot up the async loop
     asyncio.run(run_chat())

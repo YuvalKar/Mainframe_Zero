@@ -80,23 +80,19 @@ def get_system_prompt() -> str:
 
 #########################################
 def init_session(model_name: str = 'gemini-2.5-flash') -> dict:
-    """
-    Initializes a session context dictionary instead of a stateful chat object.
-    """
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs(".logs", exist_ok=True)
     
     log_file = os.path.join(".logs", f"session_{session_id}_{model_name}.jsonl")
     print(f"[Core] Started new session log: {log_file}")
 
-    # Pass the specific log_file to our logger
     log_pipeline_step(log_file, "system", f"Session initialized with model '{model_name}'.")
 
-    # Return a context dictionary instead of a Gemini Chat object
     return {
         "session_id": session_id,
         "model_name": model_name,
-        "log_file": log_file
+        "log_file": log_file,
+        "history": [] # NEW: Our short-term memory stack
     }
 
 #########################################
@@ -120,17 +116,26 @@ def log_pipeline_step(log_file: str, step_type: str, content: any):
         print(f"[Core Warning] Failed to write to pipeline log: {e}")
 
 ########################################
-def enrich_prompt(user_input: str) -> str:
-    """
-    Orchestrates the context injection: Files (@), Skills, and Senses dynamically.
-    Returns the enriched string without printing anything to the console.
-    """
-    # 1. Bring in the global attention state to know which app is running
+def enrich_prompt(session_context: dict, user_input: str) -> str:
     global _active_attention 
     
-    file_matches = re.findall(r'@([\w\.\-\/\\]+)', user_input)
-    enriched_prompt = user_input
+    enriched_prompt = ""
     
+    # 1. Inject Recent History First
+    history = session_context.get("history", [])
+    if history:
+        enriched_prompt += "--- Recent Conversation History ---\n"
+        for turn in history:
+            enriched_prompt += f"User: {turn['user']}\n"
+            enriched_prompt += f"System: {turn['ai']}\n"
+        enriched_prompt += "-----------------------------------\n\n"
+        
+    enriched_prompt += f"Current User Input: {user_input}\n"
+    
+    # 2. add current user input
+    file_matches = re.findall(r'@([\w\.\-\/\\]+)', user_input)
+    
+    # 3. If there are file references, read their content and inject into the prompt
     if file_matches:
         enriched_prompt += "\n\n--- Attached Files Context ---\n"
         for filename in file_matches:
@@ -142,17 +147,18 @@ def enrich_prompt(user_input: str) -> str:
                     # We return the error inside the prompt so the AI knows it failed
                     enriched_prompt += f"\n[System Error: Could not read '{filename}': {e}]\n"
         enriched_prompt += "------------------------------\n"
-
-    #TBD YUVAL - inject skills only once in attention shift, not on every prompt enrichment. We can keep track of this in the attention state.!!!!!
     
-    # 2. Determine the active app name to build dynamic paths
+    # 4. Inject Available Actions (Skills from Cerebellum)
+
+    #4.1 Get app name
     app_name = None
     if _active_attention:
         app_name = _active_attention.get("required_app")
 
-    # 3. Inject Available Actions (Skills from Cerebellum)
+    # 4.2 Get core skills and merge with app-specific skills if applicable
     current_skills = get_available_actions("cerebellum") # Scan core directory
     
+    # 4.3 Get app-specific skills and merge with app-specific skills if applicable
     if app_name:
         # Scan app-specific directory and merge into current_skills
         app_skills_path = os.path.join("apps", app_name, "cerebellum")
@@ -166,9 +172,10 @@ def enrich_prompt(user_input: str) -> str:
     else:
         enriched_prompt += "No skills available.\n\n"
     
-    # 4. Inject Available Senses
+    # 5. Inject Available Senses
     current_senses = get_available_actions("senses") # Scan core directory
     
+    # 5.1 Get app-specific senses and merge with core senses if applicable
     if app_name:
         # Scan app-specific directory and merge into current_senses
         app_senses_path = os.path.join("apps", app_name, "senses")
@@ -285,7 +292,7 @@ def execute_direct(action_name: str, action_data: dict) -> dict:
         return {"success": False, "message": f"Execution failed: {str(ex)}"}
     
 #########################################
-async def run_agentic_loop(session_context: dict, current_prompt: str, emit_callback=None) -> dict:
+async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_input: str = "", emit_callback=None) -> dict:
     """
     Runs the interaction loop statelessly. 
     It receives the session context (where to log, what model to use) and the prompt.
@@ -351,6 +358,14 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, emit_call
 
             if action_type == "chat" or not actions_list:
                 log_pipeline_step(log_file, "backend_loop_exit", "Action type is 'chat' or no actions provided. Exiting loop.")
+                
+                # NEW: Save the interaction to our short-term memory stack before exiting - TBD change to DB later
+                if raw_user_input and chat_text:
+                    history = session_context.get("history", [])
+                    history.append({"user": raw_user_input, "ai": chat_text})
+                    # Keep only the last 5 interactions to avoid token bloat
+                    session_context["history"] = history[-5:]
+                    
                 break
 
             execution_summary = []
