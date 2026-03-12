@@ -69,56 +69,6 @@ def shift_attention(attention_id: str) -> bool:
         return False
 
 #########################################
-# def create_chat_session(model_name: str = 'gemini-2.5-flash'):
-#     global _current_log_file
-    
-#     try:
-#         with open("system_prompt.md", "r", encoding="utf-8") as f:
-#             system_rules = f.read()
-#     except FileNotFoundError:
-#         system_rules = "You are a helpful AI."
-#         print("[Core Warning: system_prompt.md not found]")
-
-#     # Generate a unique ID for this specific session based on time
-#     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-#     os.makedirs(".logs", exist_ok=True)
-    
-#     # Set the log file name for this specific chat instance
-#     _current_log_file = os.path.join(".logs", f"session_{session_id}_{model_name}.jsonl")
-#     print(f"[Core] Started new session log: {_current_log_file}")
-
-#     log_pipeline_step("system", f"Chat session initialized with model '{model_name}' and system rules loaded.")
-
-#     return _client.chats.create(
-#         model=model_name,
-#         config=types.GenerateContentConfig(
-#             system_instruction=system_rules,
-#             temperature=0.1,
-#             response_mime_type="application/json",
-#         )
-#     )
-
-##################################
-# def log_pipeline_step(step_type: str, content: any):
-#     """
-#     Appends a raw interaction step to the active session's JSONL log file.
-#     """
-#     if not _current_log_file:
-#         return # Safety check: don't log if session isn't initialized
-        
-#     log_entry = {
-#         "timestamp": datetime.now().isoformat(),
-#         "step_type": step_type,
-#         "content": content
-#     }
-    
-#     try:
-#         with open(_current_log_file, "a", encoding="utf-8") as f:
-#             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
-#     except Exception as e:
-#         print(f"[Core Warning] Failed to write to pipeline log: {e}")
-
-#########################################
 def get_system_prompt() -> str:
     # Load system rules from file for each stateless request
     try:
@@ -169,10 +119,6 @@ def log_pipeline_step(log_file: str, step_type: str, content: any):
     except Exception as e:
         print(f"[Core Warning] Failed to write to pipeline log: {e}")
 
-#########################################
-#########################################
-#########################################
-#########################################
 ########################################
 def enrich_prompt(user_input: str) -> str:
     """
