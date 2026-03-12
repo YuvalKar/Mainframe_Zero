@@ -13,6 +13,9 @@ import sys
 # Import utility functions
 from core_utils.actions_scanner import get_available_actions
 
+# Import memory DB functions for short-term history
+from core_utils.memory_db import save_chat_history_turn, get_recent_chat_history
+
 # Load environment variables where the core actually needs them
 load_dotenv()
 
@@ -92,7 +95,6 @@ def init_session(model_name: str = 'gemini-2.5-flash') -> dict:
         "session_id": session_id,
         "model_name": model_name,
         "log_file": log_file,
-        "history": [] # NEW: Our short-term memory stack
     }
 
 #########################################
@@ -121,15 +123,26 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     
     enriched_prompt = ""
     
-    # 1. Inject Recent History First
-    history = session_context.get("history", [])
+    # Extract the session_id safely from the context dictionary
+    session_id = session_context.get("session_id")
+    
+    # 1. Fetch Recent History directly from PostgreSQL
+    history = get_recent_chat_history(session_id, limit=5)
     if history:
-        enriched_prompt += "--- Recent Conversation History ---\n"
+        enriched_prompt += "[System Context: Recent Conversation History]\n"
         for turn in history:
             enriched_prompt += f"User: {turn['user']}\n"
-            enriched_prompt += f"System: {turn['ai']}\n"
+            
+            # Print actions and their results if they occurred during this turn
+            if turn.get('actions'):
+                enriched_prompt += "System Actions Taken:\n"
+                for act in turn['actions']:
+                    enriched_prompt += f"- [{act['action']}]: {act['result']}\n"
+                    
+            enriched_prompt += f"AI: {turn['ai']}\n"
         enriched_prompt += "-----------------------------------\n\n"
-        
+
+    # 1.1 Add the current user input at the end of the history to ensure it's fresh in context
     enriched_prompt += f"Current User Input: {user_input}\n"
     
     # 2. add current user input
@@ -305,14 +318,14 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
     loop_counter = 0
     max_loops = 3 
     interaction_log = []
+    
+    # We will accumulate all actions and sensory feedback across the loops for this single user turn
+    turn_actions_log = []
 
     async def log_and_emit(item_type: str, content: str):
         item = {"type": item_type, "content": content}
         interaction_log.append(item)
-        
-        # Pass the log_file explicitly
         log_pipeline_step(log_file, f"ui_emit_{item_type}", content)
-        
         if emit_callback:
             await emit_callback(item)
 
@@ -327,11 +340,10 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
         try:
             log_pipeline_step(log_file, "backend_api_request", {"loop": loop_counter, "prompt": current_prompt})
 
-            # THE ENGINE SWAP: Stateless call instead of chat.send_message
             def _call_gemini():
                 return _client.models.generate_content(
                     model=model_name,
-                    contents=current_prompt, # Sending ONLY the current prompt (Stateless!)
+                    contents=current_prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=system_rules,
                         temperature=0.1,
@@ -339,9 +351,7 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                     )
                 )
 
-            # Run the blocking call in a separate thread
             response = await asyncio.to_thread(_call_gemini)
-            
             log_pipeline_step(log_file, "backend_api_response_raw", {"loop": loop_counter, "raw_text": response.text})
 
             ai_data = json.loads(response.text)
@@ -359,14 +369,16 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
             if action_type == "chat" or not actions_list:
                 log_pipeline_step(log_file, "backend_loop_exit", "Action type is 'chat' or no actions provided. Exiting loop.")
                 
-                # NEW: Save the interaction to our short-term memory stack before exiting - TBD change to DB later
-                if raw_user_input and chat_text:
-                    history = session_context.get("history", [])
-                    history.append({"user": raw_user_input, "ai": chat_text})
-                    # Keep only the last 5 interactions to avoid token bloat
-                    session_context["history"] = history[-5:]
-                    
-                break
+                # Save the complete turn to the PostgreSQL database before exiting
+                if raw_user_input:
+                    session_id = session_context.get("session_id")
+                    save_chat_history_turn(
+                        session_id=session_id, 
+                        user_input=raw_user_input, 
+                        actions=turn_actions_log, 
+                        ai_response=chat_text or ""
+                    )
+                break   
 
             execution_summary = []
             for act_item in actions_list:
@@ -379,11 +391,20 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                 execution_summary.append(result_string)
                 
                 await log_and_emit("action_result", result_string)
+                
+                # Record the specific action and its sensory feedback
+                turn_actions_log.append({
+                    "action": action_name,
+                    "result": result_string
+                })
 
             if execution_summary:
-                current_prompt = "[System Sensory Feedback]\n" + "\n".join(execution_summary)
+                # add to prompt for the next loop so the AI can reflect on the results of its actions
+                current_prompt += "\n\n[System Sensory Feedback]\n" + "\n".join(execution_summary)
+                current_prompt += "\n\n[System Directive: Continue executing or respond to the user based on the original request.]"
             else:
-                current_prompt = "[System: Actions resulted in no feedback.]"
+                current_prompt += "\n\n[System: Actions resulted in no feedback.]"
+
 
         except json.JSONDecodeError:
             await log_and_emit("error", f"Failed to parse AI response as JSON. Raw response: {response.text}")
