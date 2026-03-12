@@ -1,0 +1,82 @@
+/* src/App.css */
+
+/* Define our clean, light theme variables */
+:root {
+  --bg-main: #ffffff;
+  --bg-sidebar: #f8f9fa; /* Very soft gray for side panels */
+  --border-color: #e0e0e0;
+  --text-main: #202124;
+  --text-muted: #5f6368;
+  --font-delicate: 'Inter', 'Segoe UI', Roboto, Helvetica, sans-serif;
+  --transition-speed: 0.3s;
+}
+
+/* Base styles for a clean slate */
+body {
+  margin: 0;
+  font-family: var(--font-delicate);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-weight: 300; /* Delicate font weight */
+}
+
+/* Main application layout wrapper */
+.app-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Shared styles for all columns */
+.column-panel {
+  transition: width var(--transition-speed) ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Specific column styling */
+.left-column {
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+}
+
+.center-column {
+  background-color: var(--bg-main);
+}
+
+.right-column {
+  background-color: var(--bg-sidebar);
+  border-left: 1px solid var(--border-color);
+  overflow: hidden; /* Hide content when collapsed */
+}
+
+/* Toggle buttons styling */
+.toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px; /* Default for left panel */
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 10;
+  padding: 2px 6px;
+  color: var(--text-muted);
+}
+
+/* Adjust toggle button for right panel */
+.right-column .toggle-btn {
+  left: 10px;
+  right: auto;
+}
+
+/* Placeholder for the new widget area */
+.widget-placeholder {
+  padding: 40px 20px;
+  color: var(--text-muted);
+  text-align: center;
+}

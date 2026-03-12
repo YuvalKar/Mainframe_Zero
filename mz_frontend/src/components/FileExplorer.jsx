@@ -1,7 +1,46 @@
 // src/components/FileExplorer.jsx
 import { useState, useEffect } from 'react';
 
-// Recursive component to render folders and files
+// --- Minimalist Inline SVG Icons ---
+
+// Chevron for expanding/collapsing folders
+const ChevronIcon = ({ isOpen }) => (
+  <svg 
+    width="12" 
+    height="12" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    style={{ 
+      transform: isOpen ? 'rotate(90deg)' : 'none', 
+      transition: 'transform 0.15s ease',
+      color: '#9aa0a6' // Subtle gray
+    }}
+  >
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
+
+// Clean yellow folder icon
+const FolderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="#fbbc04" stroke="#fbbc04" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+// Delicate document icon
+const DocumentIcon = ({ isSelected }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#1a73e8" : "#dadce0"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+    <polyline points="13 2 13 9 20 9"></polyline>
+  </svg>
+);
+
+// --- File Tree Node Component ---
+
 const FileTreeNode = ({ node, toggleAttention, attentionShelf }) => {
   const [isOpen, setIsOpen] = useState(false);
   const isSelected = attentionShelf.some(f => f.path === node.path);
@@ -9,12 +48,24 @@ const FileTreeNode = ({ node, toggleAttention, attentionShelf }) => {
   // Render directory
   if (node.type === 'directory') {
     return (
-      <div style={{ marginLeft: "10px", marginTop: "5px" }}>
+      <div style={{ marginLeft: "10px", marginTop: "2px" }}>
         <div 
           onClick={() => setIsOpen(!isOpen)} 
-          style={{ cursor: "pointer", fontWeight: "bold", color: "#dcdcaa" }}
+          style={{ 
+            cursor: "pointer", 
+            fontWeight: "400", // Reduced weight to de-emphasize
+            fontSize: "0.85em", // Smaller font size
+            color: "var(--text-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "4px 0",
+            userSelect: "none"
+          }}
         >
-          {isOpen ? "📂" : "📁"} {node.name}
+          <ChevronIcon isOpen={isOpen} />
+          <FolderIcon />
+          <span>{node.name}</span>
         </div>
         {isOpen && node.children && (
           <div>
@@ -37,18 +88,28 @@ const FileTreeNode = ({ node, toggleAttention, attentionShelf }) => {
     <div 
       onClick={() => toggleAttention(node)}
       style={{ 
-        marginLeft: "20px", 
+        marginLeft: "28px", 
         cursor: "pointer", 
-        color: isSelected ? "#4CAF50" : "#cccccc",
-        textDecoration: isSelected ? "underline" : "none"
+        color: isSelected ? "#1a73e8" : "#80868b", // Subtle gray for unselected, blue for selected
+        backgroundColor: isSelected ? "#e8f0fe" : "transparent",
+        fontSize: "0.85em",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        transition: "background-color 0.15s ease",
+        userSelect: "none"
       }}
     >
-      📄 {node.name}
+      <DocumentIcon isSelected={isSelected} />
+      <span>{node.name}</span>
     </div>
   );
 };
 
-// Main FileExplorer component
+// --- Main FileExplorer Component ---
+
 export default function FileExplorer({ attentionShelf, toggleAttention, sendCommand, latestMessage, isConnected }) {
   const [treeData, setTreeData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +124,7 @@ export default function FileExplorer({ attentionShelf, toggleAttention, sendComm
         action_data: { root_path: "." }
       });
     }
-  }, [isConnected]); // Re-run if connection status changes
+  }, [isConnected]); 
 
   // 2. Listen to incoming messages and filter only what belongs to us
   useEffect(() => {
@@ -81,28 +142,27 @@ export default function FileExplorer({ attentionShelf, toggleAttention, sendComm
       
       setIsLoading(false);
     }
-  }, [latestMessage]); // Re-run every time a new message arrives from the App
+  }, [latestMessage]); 
 
   return (
     <div style={{ 
-      width: "300px", 
-      borderRight: "1px solid #333", 
       display: "flex", 
       flexDirection: "column", 
-      padding: "10px", 
-      backgroundColor: "#1e1e1e", 
-      color: "#d4d4d4",
-      height: "100%"
+      padding: "20px 10px", 
+      height: "100%",
+      boxSizing: "border-box"
     }}>
       
       {/* Explorer Section */}
-      <div style={{ flex: 1, overflowY: "auto", borderBottom: "1px solid #333", paddingBottom: "10px" }}>
-        <h3 style={{ color: "#9cdcfe", margin: "0 0 10px 0" }}>EXPLORER</h3>
+      <div style={{ flex: 1, overflowY: "auto", borderBottom: "1px solid var(--border-color)", paddingBottom: "15px" }}>
+        <h3 style={{ color: "var(--text-muted)", margin: "0 0 15px 10px", fontSize: "0.75em", letterSpacing: "1px", fontWeight: "600" }}>
+          EXPLORER
+        </h3>
         
         {isLoading ? (
-          <div style={{ color: "#808080", fontStyle: "italic", fontSize: "0.9em" }}>Scanning workspace...</div>
+          <div style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em", paddingLeft: "10px" }}>Scanning workspace...</div>
         ) : treeData.length === 0 ? (
-          <div style={{ color: "#808080", fontStyle: "italic", fontSize: "0.9em" }}>No files found.</div>
+          <div style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em", paddingLeft: "10px" }}>No files found.</div>
         ) : (
           treeData.map((node, idx) => (
             <FileTreeNode 
@@ -116,36 +176,50 @@ export default function FileExplorer({ attentionShelf, toggleAttention, sendComm
       </div>
 
       {/* Attention Shelf Section */}
-      <div style={{ height: "250px", overflowY: "auto", paddingTop: "10px" }}>
-        <h3 style={{ color: "#ce9178", margin: "0 0 10px 0" }}>ATTENTION SHELF ({attentionShelf.length})</h3>
+      <div style={{ height: "30%", minHeight: "200px", overflowY: "auto", paddingTop: "15px" }}>
+        <h3 style={{ color: "var(--text-muted)", margin: "0 0 15px 10px", fontSize: "0.75em", letterSpacing: "1px", fontWeight: "600" }}>
+          ATTENTION SHELF ({attentionShelf.length})
+        </h3>
         
         {attentionShelf.length === 0 ? (
-          <div style={{ color: "#808080", fontStyle: "italic", fontSize: "0.9em" }}>No files selected...</div>
+          <div style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em", paddingLeft: "10px" }}>No files selected...</div>
         ) : (
           attentionShelf.map((file, idx) => (
             <div key={idx} style={{ 
               display: "flex", 
               justifyContent: "space-between", 
-              marginBottom: "5px", 
-              padding: "5px", 
-              backgroundColor: "#2d2d2d", 
-              borderRadius: "3px", 
-              fontSize: "0.9em" 
+              alignItems: "center",
+              marginBottom: "8px", 
+              padding: "6px 10px", 
+              // Changed background and border for sent files
+              backgroundColor: file.sent ? "#e6f4ea" : "#ffffff", 
+              border: file.sent ? "1px solid #ceead6" : "1px solid var(--border-color)",
+              borderRadius: "4px", 
+              fontSize: "0.85em",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+              transition: "background-color 0.3s ease" // Smooth transition
             }}>
-              <span style={{ 
-                overflow: "hidden", 
-                textOverflow: "ellipsis", 
-                whiteSpace: "nowrap",
-                color: file.sent ? "#4CAF50" : "#ce9178"
-              }}>
-                {file.sent ? "✅ " : "⏳ "} {file.name}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+                {/* Replaced hourglass with a clean checkmark for sent files */}
+                <span style={{ fontSize: "1.1em", color: file.sent ? "#1e8e3e" : "inherit" }}>
+                  {file.sent ? "✓" : "⏳"}
+                </span>
+                <span style={{ 
+                  overflow: "hidden", 
+                  textOverflow: "ellipsis", 
+                  whiteSpace: "nowrap",
+                  color: file.sent ? "#1e8e3e" : "var(--text-main)",
+                  fontWeight: file.sent ? "500" : "400"
+                }}>
+                  {file.name}
+                </span>
+              </div>
               <span 
                 onClick={() => toggleAttention(file)} 
-                style={{ cursor: "pointer", color: "#f44336", fontWeight: "bold", paddingLeft: "10px" }}
+                style={{ cursor: "pointer", color: "#9aa0a6", fontWeight: "bold", fontSize: "1.2em", paddingLeft: "10px" }}
                 title="Remove"
               >
-                X
+                ×
               </span>
             </div>
           ))

@@ -7,6 +7,10 @@ import FileExplorer from './components/FileExplorer'
 function App() {
   const [attentionShelf, setAttentionShelf] = useState([]);
   
+  // Panel state
+  const [isLeftOpen, setIsLeftOpen] = useState(true);
+  const [isRightOpen, setIsRightOpen] = useState(false); 
+  
   // Lifted WebSocket State
   const [isConnected, setIsConnected] = useState(false);
   const [latestMessage, setLatestMessage] = useState(null);
@@ -22,7 +26,7 @@ function App() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setLatestMessage(data); // Broadcast the incoming message to all children
+        setLatestMessage(data); 
       } catch (err) {
         console.error("Parse error:", err);
       }
@@ -52,18 +56,75 @@ function App() {
     });
   };
 
+  // Calculate dynamic widths: Collapsed panels take exactly 4%
+  const getColumnWidths = () => {
+    const leftWidth = isLeftOpen ? 20 : 4;
+    // If right is open, it shares the remaining space with the center. If closed, it takes 4%.
+    const rightWidth = isRightOpen ? (100 - leftWidth) / 2 : 4;
+    // Center takes whatever is left
+    const centerWidth = 100 - leftWidth - rightWidth;
+
+    return {
+      left: `${leftWidth}%`,
+      center: `${centerWidth}%`,
+      right: `${rightWidth}%`
+    };
+  };
+
+  const widths = getColumnWidths();
+
+  // Reusable style for the delicate toggle buttons
+  const toggleButtonStyle = {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'var(--text-muted)',
+    fontSize: '1em',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '4px',
+  };
+
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "row", backgroundColor: "#1e1e1e" }}>
+    <div className="app-container">
       
-      <FileExplorer 
-        attentionShelf={attentionShelf} 
-        toggleAttention={toggleAttention}
-        sendCommand={sendCommand}
-        latestMessage={latestMessage}
-        isConnected={isConnected}
-      />
+      {/* LEFT COLUMN (File Explorer) */}
+      <div className="column-panel left-column" style={{ width: widths.left }}>
+        
+        {/* Left Toggle Bar */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: isLeftOpen ? 'flex-end' : 'center', 
+          padding: '10px',
+          borderBottom: isLeftOpen ? 'none' : '1px solid transparent'
+        }}>
+          <button 
+            style={toggleButtonStyle} 
+            onClick={() => setIsLeftOpen(!isLeftOpen)}
+            title={isLeftOpen ? "Collapse Explorer" : "Expand Explorer"}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            {isLeftOpen ? '◀' : '▶'}
+          </button>
+        </div>
+        
+        {/* Left Content */}
+        <div style={{ display: isLeftOpen ? 'block' : 'none', height: 'calc(100% - 44px)', overflow: 'hidden' }}>
+          <FileExplorer 
+            attentionShelf={attentionShelf} 
+            toggleAttention={toggleAttention}
+            sendCommand={sendCommand}
+            latestMessage={latestMessage}
+            isConnected={isConnected}
+          />
+        </div>
+      </div>
       
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      {/* CENTER COLUMN (Terminal) */}
+      <div className="column-panel center-column" style={{ width: widths.center }}>
         <Terminal 
           attentionShelf={attentionShelf} 
           setAttentionShelf={setAttentionShelf}
@@ -71,6 +132,53 @@ function App() {
           latestMessage={latestMessage}
           isConnected={isConnected}
         />
+      </div>
+
+      {/* RIGHT COLUMN (Document Viewer / Widgets) */}
+      <div className="column-panel right-column" style={{ width: widths.right }}>
+         
+         {/* Right Toggle Bar */}
+         <div style={{ 
+          display: 'flex', 
+          justifyContent: isRightOpen ? 'flex-start' : 'center', 
+          padding: '10px'
+        }}>
+          <button 
+            style={toggleButtonStyle} 
+            onClick={() => setIsRightOpen(!isRightOpen)}
+            title={isRightOpen ? "Collapse Viewer" : "Expand Viewer"}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            {isRightOpen ? '▶' : '◀'}
+          </button>
+        </div>
+
+        {/* Right Content */}
+        <div style={{ display: isRightOpen ? 'flex' : 'none', flexDirection: 'column', height: 'calc(100% - 44px)', padding: '0 20px 20px 20px' }}>
+          
+          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '15px' }}>
+            <h3 style={{ color: "var(--text-muted)", margin: 0, fontSize: "0.85em", letterSpacing: "1px", fontWeight: "600" }}>
+              DOCUMENT VIEWER
+            </h3>
+          </div>
+
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            backgroundColor: '#ffffff',
+            border: '1px dashed var(--border-color)',
+            borderRadius: '8px',
+            color: 'var(--text-muted)',
+            fontStyle: 'italic',
+            fontSize: '0.9em'
+          }}>
+            Select a file to preview or edit...
+          </div>
+
+        </div>
       </div>
 
     </div>
