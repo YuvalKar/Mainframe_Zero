@@ -1,6 +1,6 @@
 """
-SENSE NAME: sense_db_schema
-PURPOSE: Retrieves the current schema of the PostgreSQL database, including tables, columns, and data types.
+NAME: sense_db_schema
+DESCRIPTION: Retrieves the current schema of the PostgreSQL database, including tables, columns, and data types.
          
 WHEN TO USE: 
 - When you need to understand the database structure before writing or reading data.
@@ -8,9 +8,13 @@ WHEN TO USE:
          
 INPUTS:
 - None
+OUTPUTS:
+- success (bool): Indicates whether the operation was successful.
+- message (str): A descriptive message about the operation's outcome.
+- data (dict, optional): If successful, a structured dictionary containing the database schema information, including table names, column names, and data types. If the operation fails, this field may be omitted or set to None.
 """
 
-from core_utils.memory_db import get_db_connection
+from database.db_connection import get_db_connection
 
 def execute() -> dict:
     # 1. Establish connection using the existing utility

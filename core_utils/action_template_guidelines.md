@@ -12,8 +12,8 @@ Every skill file must start with a comprehensive docstring structured exactly li
 
 ```python
 """
-SKILL / SENSE: <skill_name>
-PURPOSE: <A clear, 1-2 sentence description of what this tool achieves. Explain the 'Why'>
+NAME: <skill_name>
+DESCRIPTION: <A clear, 1-2 sentence description of what this tool achieves. Explain the 'Why'>
          
 WHEN TO USE: 
 - <Specific scenario 1 where the AI should call this tool>
@@ -23,4 +23,6 @@ WHEN TO USE:
 INPUTS:
 - <param_name> (<type>): <Description of the parameter>. Default is <X> if applicable.
 - <param_name> (<type>, optional): <Description>.
+Output/Return Value:
+- description of data returned or NULL
 """

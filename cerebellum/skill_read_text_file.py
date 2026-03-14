@@ -1,6 +1,6 @@
 """
-SKILL NAME: skill_read_text_file
-DESCRIPTION: This skill reads the content of a specified text file.
+NAME: skill_read_text_file
+DESCRIPTION: Reads the content of a specified text file.
 
 Input Arguments:
     filepath (str): The full path to the text file to be read.

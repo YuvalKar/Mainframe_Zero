@@ -1,6 +1,6 @@
 """
-SENSE NAME: sense_get_directory_tree
-PURPOSE: Scans a local directory and generates a hierarchical tree structure of its contents.
+NAME: sense_get_directory_tree
+DESCRIPTION: Scans a local directory and generates a hierarchical tree structure of its contents.
          
 WHEN TO USE: 
 - When the system needs to understand the file structure of a specific folder or workspace.
@@ -10,6 +10,16 @@ WHEN TO USE:
 INPUTS:
 - root_path (str): The path to the directory to scan. Default is '.' (current directory).
 - allowed_extensions (list, optional): A list of file extensions to include. Default is ['.md', '.py'].
+OUTPUTS:
+- success (bool): Indicates whether the operation was successful.
+- message (str): A descriptive message about the operation's outcome.
+- data (list, optional): If successful, a list of dictionaries representing the directory tree. Each dictionary has the following structure:
+    {
+        "name": "filename_or_foldername",
+        "type": "file" or "directory",
+        "path": "full_path_to_item",
+        "children": [ ... ] # Only for directories, a list of child items with the same structure
+    }
 """
 import os
 import fnmatch

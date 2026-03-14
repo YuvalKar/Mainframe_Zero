@@ -1,5 +1,5 @@
 """
-SENSE NAME: sense_python_function_execution
+NAME: sense_python_function_execution
 DESCRIPTION: Executes a specific function within a Python file and captures its return value or errors.
 INPUTS:
     - filepath (str): Path to the .py file.
@@ -7,7 +7,9 @@ INPUTS:
     - args (list, optional): Positional arguments to pass to the function.
     - kwargs (dict, optional): Keyword arguments to pass to the function.
 OUTPUT:
-    - dict: {success: bool, result: any, error: str}
+    - success (bool): Indicates if the function executed successfully.
+    - result: The return value of the function if successful, or None if an error occurred.
+    - error (str, optional): Error message if the execution failed, otherwise None.
 """
 
 import subprocess
