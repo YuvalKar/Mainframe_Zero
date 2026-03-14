@@ -1,17 +1,38 @@
 // src/components/DocumentViewer.jsx
 import { useState, useEffect } from 'react';
 
+// 1. Import the syntax highlighter and a light theme to match your UI
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 export default function DocumentViewer({ activeDocument, sendCommand, latestMessage, isConnected }) {
   const [fileContent, setFileContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 2. Helper function to determine the language from the file extension
+  const getLanguage = (filename) => {
+    if (!filename) return 'text';
+    const ext = filename.split('.').pop().toLowerCase();
+    
+    const languageMap = {
+      'js': 'javascript',
+      'jsx': 'jsx',
+      'py': 'python',
+      'md': 'markdown',
+      'json': 'json',
+      'html': 'html',
+      'css': 'css'
+    };
+    
+    return languageMap[ext] || 'text'; // Fallback to plain text if unknown
+  };
 
   // Fetch file content when activeDocument changes
   useEffect(() => {
     if (isConnected && activeDocument) {
       setIsLoading(true);
-      setFileContent(""); // Clear previous content
+      setFileContent(""); 
       
-      // Sending exact parameters expected by sense_read_text_file.py
       sendCommand({
         action: "execute",
         action_name: "sense_read_text_file", 
@@ -20,16 +41,14 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     }
   }, [activeDocument, isConnected]);
 
-  // Listen for the incoming file content from the backend
+  // Listen for the incoming file content
   useEffect(() => {
     if (!latestMessage) return;
 
-    // Matching the correct action_name
     if (latestMessage.type === "direct_result" && latestMessage.action_name === "sense_read_text_file") {
       const result = latestMessage.data;
       
       if (result.success) {
-        // Python returns 'content' directly in the dictionary
         setFileContent(result.content); 
       } else {
         setFileContent(`Error reading file: ${result.message}`);
@@ -38,7 +57,6 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     }
   }, [latestMessage]);
 
-  // Render placeholder if no document is currently selected
   if (!activeDocument) {
     return (
       <div style={{ 
@@ -58,7 +76,6 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     );
   }
 
-  // Render the actual document content
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ paddingBottom: "10px", fontWeight: "bold", color: "var(--text-main)", fontSize: "0.9em" }}>
@@ -69,18 +86,29 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
         flex: 1, 
         overflowY: "auto", 
         backgroundColor: "#f8f9fa", 
-        padding: "15px", 
         borderRadius: "6px",
         border: "1px solid var(--border-color)",
-        fontFamily: "monospace",
-        fontSize: "0.85em",
-        whiteSpace: "pre-wrap", // Preserves line breaks
         color: "var(--text-main)"
       }}>
         {isLoading ? (
-          <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Loading content...</span>
+          <div style={{ padding: "15px", color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em" }}>
+            Loading content...
+          </div>
         ) : (
-          fileContent
+          /* 3. Wrap the content with the SyntaxHighlighter */
+          <SyntaxHighlighter 
+            language={getLanguage(activeDocument.name)} 
+            style={vs}
+            customStyle={{
+              margin: 0,
+              padding: "15px",
+              backgroundColor: "transparent", // We let the parent div handle the background color
+              fontSize: "0.85em",
+              fontFamily: "monospace"
+            }}
+          >
+            {fileContent}
+          </SyntaxHighlighter>
         )}
       </div>
     </div>
