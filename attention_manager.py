@@ -92,3 +92,32 @@ class AttentionManager:
         if not tree:
             print(f"[AttentionManager] Warning: Could not fetch LOD tree for '{attention_id}'.")
         return tree
+    
+    def summarize_attention(self, attention_id: str, chat_history: list) -> bool:
+        """
+        Generates and saves short and detailed summaries based on the recent chat history.
+        This should be called during a context switch.
+        """
+        # 1. Format the history into a single string for the AI
+        formatted_history = "\n".join([f"{m['role']}: {m['content']}" for m in chat_history])
+
+        # 2. Call the AI to generate summaries
+        # (This is a placeholder for your LLM call logic)
+        summaries = self._generate_ai_summaries(formatted_history)
+        
+        if not summaries:
+            return False
+
+        # 3. Update the database record
+        return self.update_attention(
+            attention_id, 
+            short_summary=summaries['short'], 
+            detailed_summary=summaries['detailed']
+        )
+
+    def _generate_ai_summaries(self, history_text: str) -> dict:
+        """
+        Internal helper to prompt the LLM.
+        """
+        # Here we will define the prompt...
+        pass

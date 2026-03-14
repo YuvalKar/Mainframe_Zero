@@ -15,16 +15,6 @@ The Hierarchical Attention system solves this by dynamically loading context bas
 4. **Beyond LOD 2:** Out of scope. Anything further away effectively does not exist in the current working memory, preventing cognitive overload and saving token costs.
 5. **Seamless Context Switching:** You can pause a highly detailed task, shift Attention to an entirely different branch, and later return to the exact state of the previous task without mixing up the AI's memory.
 
-## Navigation & Control (The "Steering Wheel")
-Attention can be navigated and managed in two complementary ways:
-
-1. **Manual Navigation:** Using terminal commands like:
-   * `/tree`: To view the LOD map of the current active tree.
-   * `/focus <id>`: To jump to a specific branch or node.
-   * `/new`: To manually create a child node under the current active Attention.
-   * `/new_root`: To spawn a completely new, independent Attention. It belongs to a specific app domain but stands alone as its own root, detached from any existing tree.
-2. **Organic Growth:** The Core intelligently detects when a conversation "drills down" into a specific topic and can propose spinning up a new child Attention automatically.
-
 ## How it Works (Under the Hood)
 The lifecycle of an Attention state is managed by the `AttentionManager` using a PostgreSQL database.
 
@@ -33,7 +23,9 @@ When a new Attention is created:
 * It generates a unique ID (e.g., `attn_1b574f1e`).
 * It inserts a new record into the `attentions` PostgreSQL table.
 * It records its `parent_id` to establish its place in the hierarchical tree.
-* If physical files are needed, they are mapped via a relational `assets` table rather than relying on a rigid folder structure.
+* If files are needed, they are mapped in the `working_files` JSONB field.
+* `short_summary` and `detailed_summary` can be updated later.
+
 
 ### 2. Context Assembly & Routing
 When the Core shifts focus to an `attention_id`:
@@ -42,19 +34,7 @@ When the Core shifts focus to an `attention_id`:
 * It dynamically loads the `required_app` using `importlib` and mounts only the relevant Senses and Motor Skills for that specific LOD.
 
 ## Anatomy of an Attention Object
-This is the internal structure stored in the PostgreSQL database. The self-referencing `parent_id` enables the infinite tree structure:
-
-```sql
-    Table: attentions
-    -----------------
-    id           (VARCHAR) : "attn_1b574f1e" (Primary Key)
-    parent_id    (VARCHAR) : "attn_8a92c3d4" (Foreign Key -> attentions.id, Nullable for roots)
-    name         (VARCHAR) : "Rusty Metal Texture"
-    required_app (VARCHAR) : "blender_for_uefn"
-    tags         (JSONB)   : '["texture", "materials", "rusty"]'
-    status       (VARCHAR) : "ready"
-    created_at   (TIMESTAMP): 2026-03-12 10:00:00
-```
+This is the internal structure stored in the PostgreSQL database. The self-referencing `parent_id` enables the infinite tree structure
 
 ## Future Expansion
 Vector Database Integration (pgvector): Leveraging our existing PostgreSQL infrastructure to add semantic search over past tasks and chat history. This will allow the Core to retrieve distant "forgotten" knowledge that falls outside of the current LOD scope by finding vector similarities in the chat_history table.
