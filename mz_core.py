@@ -7,8 +7,9 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 from datetime import datetime
-from attention_manager import AttentionManager
-import sys
+
+# Import our new functional attention operations
+import attention_ops
 
 # Import utility functions
 from core_utils.actions_scanner import get_available_actions
@@ -22,55 +23,21 @@ load_dotenv()
 # We can keep a single client instance for the core to use
 _client = genai.Client()
 
-# Initialize the Attention Manager and state variables
-_attention_manager = AttentionManager()
-_active_attention = None
-_active_app_module = None
-
-def shift_attention(attention_id: str) -> bool:
+def shift_attention(session_context: dict, attention_id: str) -> bool:
     """
-    Loads an Attention context and dynamically mounts its required App.
+    Loads an Attention context, stores it in the session, and dynamically mounts its required App.
     """
-    global _active_attention, _active_app_module
-    
-    # 1. Load the attention metadata
-    attn_data = _attention_manager.load_attention(attention_id)
+    # 1. Load the attention metadata using the ops module
+    attn_data = attention_ops.load_attention(attention_id)
     if not attn_data:
         print(f"[Core Error] Attention ID '{attention_id}' not found.")
         return False
         
-    _active_attention = attn_data
-    app_name = attn_data.get("required_app")
+    # Store the active attention directly in our session context
+    session_context["active_attention"] = attn_data
     
     print(f"\n[Core] Shifting attention to: '{attn_data.get('name')}'")
-    print(f"[Core] Required App: {app_name}")
     
-    # 2. Dynamically import the app module
-    try:
-        # We assume apps are located in the 'apps' directory
-        module_path = f"apps.{app_name}"
-        app_module = importlib.import_module(module_path)
-        
-        # 3. Call the app's contract function to register it
-        if hasattr(app_module, 'register_to_core'):
-            # Pass the current core module (sys.modules[__name__]) and the context
-            current_core = sys.modules[__name__]
-            success = app_module.register_to_core(current_core, attn_data)
-            
-            if success:
-                _active_app_module = app_module
-                return True
-            else:
-                print(f"[Core Error] App '{app_name}' failed during registration.")
-                return False
-        else:
-            print(f"[Core Error] App '{app_name}' is missing the 'register_to_core' function.")
-            return False
-            
-    except ImportError as e:
-        print(f"[Core Error] Could not load app '{app_name}'. Is it in the 'apps' folder? Error: {e}")
-        return False
-
 #########################################
 def get_system_prompt() -> str:
     # Load system rules from file for each stateless request
@@ -119,7 +86,6 @@ def log_pipeline_step(log_file: str, step_type: str, content: any):
 
 ########################################
 def enrich_prompt(session_context: dict, user_input: str) -> str:
-    global _active_attention 
     
     enriched_prompt = ""
     
@@ -164,9 +130,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     # 4. Inject Available Actions (Skills from Cerebellum)
 
     #4.1 Get app name
-    app_name = None
-    if _active_attention:
-        app_name = _active_attention.get("required_app")
+    active_attention = session_context.get("active_attention")
+    app_name = active_attention.get("required_app") if active_attention else None
 
     # 4.2 Get core skills and merge with app-specific skills if applicable
     current_skills = get_available_actions("cerebellum") # Scan core directory
@@ -205,18 +170,18 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     return enriched_prompt
 
 ################################### 
-def execute_single_action(action_name: str, action_data: dict) -> str:
+def execute_single_action(session_context: dict, action_name: str, action_data: dict) -> str:    
     """
     Locates the action file and executes it dynamically. 
     Checks app-specific directories first, then falls back to core directories.
     Returns the execution result as a string (no direct prints).
     """
-    global _active_attention
+    
     target_path = None
-    app_name = None
 
-    if _active_attention:
-        app_name = _active_attention.get("required_app")
+    # Extract app name from the session
+    active_attention = session_context.get("active_attention")
+    app_name = active_attention.get("required_app") if active_attention else None
 
     # 1. Define the possible directory paths to search
     search_paths = []
@@ -387,7 +352,7 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                 
                 await log_and_emit("system", f"Initiating Action -> {action_name}")
                 
-                result_string = execute_single_action(action_name, action_data)
+                result_string = execute_single_action(session_context, action_name, action_data)
                 execution_summary.append(result_string)
                 
                 await log_and_emit("action_result", result_string)
