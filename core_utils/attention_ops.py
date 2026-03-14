@@ -8,6 +8,7 @@ from database.db_attention import (
     get_attention_context_tree
 )
 
+#########################################
 def create_attention(name: str, required_app: str = None, parent_id: str = None, 
                      tags: list = None, short_summary: str = None, 
                      detailed_summary: str = None, working_files: list = None) -> dict:
@@ -40,6 +41,7 @@ def create_attention(name: str, required_app: str = None, parent_id: str = None,
     print(f"[Attention Ops] Error: Could not create attention '{name}'")
     return None
 
+#########################################
 def load_attention(attention_id: str) -> dict:
     """
     Loads an existing Attention by its ID and bumps its updated_at timestamp.
@@ -54,6 +56,7 @@ def load_attention(attention_id: str) -> dict:
     print(f"[Attention Ops] Warning: Attention '{attention_id}' not found.")
     return None
 
+##########################################
 def search_attentions(app_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
     """
     Searches the database for Attentions matching the criteria.
@@ -65,6 +68,7 @@ def search_attentions(app_filter: str = None, tag_filter: str = None, name_filte
         name_filter=name_filter
     )
 
+#########################################
 def update_attention(attention_id: str, **kwargs) -> bool:
     """
     Updates specific fields of an Attention.
@@ -75,6 +79,7 @@ def update_attention(attention_id: str, **kwargs) -> bool:
         print(f"[Attention Ops] Warning: Failed to update attention '{attention_id}'.")
     return success
 
+#########################################
 def get_lod_context(attention_id: str) -> dict:
     """
     Retrieves the full Level of Detail (LOD) tree for the AI's context window.
@@ -84,3 +89,19 @@ def get_lod_context(attention_id: str) -> dict:
     if not tree:
         print(f"[Attention Ops] Warning: Could not fetch LOD tree for '{attention_id}'.")
     return tree
+
+#########################################
+def shift_attention(session_context: dict, attention_id: str) -> bool:
+    """
+    Loads an Attention context, stores it in the session, and dynamically mounts its required App.
+    """
+    # 1. Load the attention metadata using the ops module
+    attn_data = load_attention(attention_id)
+    if not attn_data:
+        print(f"[Core Error] Attention ID '{attention_id}' not found.")
+        return False
+        
+    # Store the active attention directly in our session context
+    session_context["active_attention"] = attn_data
+    
+    print(f"\n[Core] Shifting attention to: '{attn_data.get('name')}'")

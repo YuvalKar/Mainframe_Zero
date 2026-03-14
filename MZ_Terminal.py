@@ -1,7 +1,8 @@
-import os
 import asyncio
 
 import mz_core
+from core_utils import session_manager
+from core_utils import context_builder
 
 def terminal_chat():
     """
@@ -11,7 +12,7 @@ def terminal_chat():
     print("\n[System: Initializing Mainframe Zero Brain via Core...]")
     try:
         # Ask the core to handle the engine initialization (returns a context dict)
-        session_ctx = mz_core.init_session()
+        session_ctx = session_manager.init_session()
     except Exception as e:
         print(f"[System Error: Failed to initialize session - {e}]")
         return
@@ -23,19 +24,19 @@ def terminal_chat():
     async def run_chat():
         while True:
             user_input = input("You: ")
-
+            
             if user_input.lower() in ['exit', 'quit']: 
                 break
             if user_input.lower() == 'reset':
                 print("\n[System: Resetting Mainframe Zero Session...]")
                 nonlocal session_ctx
-                session_ctx = mz_core.init_session()
+                session_ctx = session_manager.init_session()
                 continue
             if not user_input.strip(): 
                 continue
 
             # Step 1: Enrich the user prompt via core
-            final_prompt = mz_core.enrich_prompt(session_ctx, user_input)
+            final_prompt = context_builder.enrich_prompt(session_ctx, user_input)
 
             # Callback to print immediately to the terminal
             async def print_stream(item):

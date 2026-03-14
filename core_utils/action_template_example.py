@@ -1,9 +1,9 @@
 """
-SKILL_TYPE: skill_name_of_the_skill (e.g., "weather_report" if the file is weather_report.py)
+ACTION_TYPE: skill_name_of_the_skill_or_sense (e.g., "sense_weather_report" if the file is sense_weather_report.py)
 PURPOSE: This is a boilerplate template to demonstrate the structure.
          
 WHEN TO USE: 
-- When creating a new skill from scratch to ensure structural consistency.
+- When to use this skill or sense.
          
 INPUTS:
 - param_one (str): The first required parameter.

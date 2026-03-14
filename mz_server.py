@@ -1,10 +1,14 @@
 import json
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 # The server only knows about the core, nothing about the AI engine
 import mz_core
+from core_utils import session_manager
+from core_utils import context_builder
+from core_utils import actions_ops
 
 # Global variable to hold our active chat session
 mz_chat_session = None
@@ -23,7 +27,7 @@ async def handle_chat(payload: dict, websocket: WebSocket, stream_callback):
     print(f"[Server] Processing chat input: {user_input}")
     
     # 1. Pass the session context (mz_chat_session) to enrich_prompt
-    final_prompt = mz_core.enrich_prompt(mz_chat_session, user_input)
+    final_prompt = context_builder.enrich_prompt(mz_chat_session, user_input)
     
     # 2. Pass mz_chat_session and raw_user_input to the loop
     await mz_core.run_agentic_loop(
@@ -41,7 +45,7 @@ async def handle_change_model(payload: dict, websocket: WebSocket, stream_callba
     new_model = payload.get("model", "gemini-2.5-flash") # Fallback to flash
     print(f"[Server] Switching model to: {new_model}")
     
-    mz_chat_session = mz_core.init_session(new_model)
+    mz_chat_session = session_manager.init_session(new_model)
     
     # Notify the frontend that the switch was successful
     await stream_callback({
@@ -55,12 +59,14 @@ async def handle_execute(payload: dict, websocket: WebSocket, stream_callback):
     Handles generic direct executions from the UI, bypassing the AI agent loop.
     Maps exactly to how the AI executes single actions.
     """
+    global mz_chat_session
+
     action_name = payload.get("action_name")
     action_data = payload.get("action_data", {})
     print(f"[Server] UI requested direct execution for: {action_name}")
     
     # Call the core's direct execution method
-    result = mz_core.execute_direct(action_name, action_data)
+    result = actions_ops.execute_direct(action_name, action_data, mz_chat_session)  # Pass None for session_context for now, can be enhanced later
     
     # Stream the raw data back to the frontend with a specific type flag
     # so the frontend knows it's a direct result and not a chat message
@@ -91,7 +97,7 @@ async def lifespan(app: FastAPI):
     print("[Server] Initializing Mainframe Zero Brain via Core...")
     
     try:
-        mz_chat_session = mz_core.init_session()
+        mz_chat_session = session_manager.init_session()
         print("[Server] Brain initialized successfully.")
     except Exception as e:
         print(f"[Server Error] Failed to initialize brain: {e}")
