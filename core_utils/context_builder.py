@@ -5,6 +5,7 @@ import re
 from core_utils.actions_ops import get_available_actions
 
 # Import memory DB functions for short-term history
+from core_utils.attention_ops import create_attention
 from database.db_chat_history import get_recent_chat_history
 
 #########################################
@@ -17,6 +18,78 @@ def get_system_prompt() -> str:
         print("[Core Warning: system_prompt.md not found]")
         return "You are a helpful AI."
     
+def sync_files_to_context(session_context: dict, file_matches:list) -> str:
+    """
+    This function takes a list of file matches (filenames extracted from user input) and enriches the prompt with their content or summaries.
+    It also manages an "active_attention" in the session context to track these files and their metadata for future interactions. 
+    """
+    
+    enriched_prompt = ""
+
+    if file_matches:
+        enriched_prompt += "\n\n--- Attached Files ---\n"
+        
+        # Safely initialize active_attention and working_files if they don't exist
+        if "active_attention" not in session_context:
+            session_context["active_attention"] = create_attention(name="Auto-Created Attention for File Syncing", required_app=None, tags=["file_sync"])
+            
+        active_attention = session_context["active_attention"]
+        
+        if "working_files" not in active_attention:
+            active_attention["working_files"] = {}
+            
+        working_files = active_attention["working_files"]
+
+        for filename in file_matches:
+            if os.path.exists(filename):
+                try:
+                    # Get the current last modified time of the file
+                    current_mtime = os.path.getmtime(filename)
+                    file_data = working_files.get(filename)
+                    
+                    # Check if we have a valid long description and the file hasn't been modified
+                    has_valid_summary = (
+                        file_data is not None and 
+                        file_data.get("last_modified") == current_mtime and 
+                        file_data.get("long_description")
+                    )
+
+                    if has_valid_summary:
+                        # Use the cached long description
+                        enriched_prompt += f"\n[Summary of {filename}]:\n{file_data['long_description']}\n"
+                        enriched_prompt += "-----------------\n"
+                    else:
+                        # File is new, modified, or missing a summary - read lines safely
+                        with open(filename, 'r', encoding='utf-8') as f:
+                            lines = f.readlines()
+                            
+                        # Check if the file is longer than 20 lines
+                        if len(lines) > 20:
+                            # Take only the first 20 lines and join them back
+                            preview_content = "".join(lines[:20])
+                            enriched_prompt += f"\n[Content of {filename} (First 20 lines)]:\n{preview_content}\n...\n[Note: This is how the file starts. Full file is longer.]\n"
+                        else:
+                            # If it's 20 lines or shorter, just use the whole thing
+                            full_content = "".join(lines)
+                            enriched_prompt += f"\n[Content of {filename}]:\n{full_content}\n"
+                            
+                        enriched_prompt += "-----------------\n"
+                            
+                        # Register or update the file in working_files
+                        working_files[filename] = {
+                            "path": filename,
+                            "last_modified": current_mtime,
+                            "short_description": file_data.get("short_description", "") if file_data else "",
+                            "long_description": file_data.get("long_description", "") if file_data else ""
+                        }
+                        
+                except Exception as e:
+                    # We return the error inside the prompt so the AI knows it failed
+                    enriched_prompt += f"\n[System Error: Could not read/process '{filename}': {e}]\n"
+                    
+        enriched_prompt += "---------- END OF ATTACHED FILES ----------\n\n"
+
+    return enriched_prompt
 
 #########################################
 def enrich_prompt(session_context: dict, user_input: str) -> str:
@@ -42,29 +115,12 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
             enriched_prompt += f"AI: {turn['ai']}\n"
         enriched_prompt += "-----------------------------------\n\n"
 
-    # 1.1 Add the current user input at the end of the history to ensure it's fresh in context
+    # 2. Add the current user input at the end of the history to ensure it's fresh in context
     enriched_prompt += f"Current User Input: {user_input}\n"
     
-    # 2. add current user input
+    # 3. add Files mentioned in the user input (using regex to find file patterns like @filename.txt)
     file_matches = re.findall(r'@([\w\.\-\/\\]+)', user_input)
-    
-    # 3. If there are file references, read their content and inject into the prompt
-    if file_matches:
-        enriched_prompt += "\n\n--- Attached Files ---\n"
-        for filename in file_matches:
-            if os.path.exists(filename):
-                try:
-                    with open(filename, 'r', encoding='utf-8') as f:
-                        # TBD: We may want to add some kind of file size limit or content filtering here in the future to avoid overwhelming the prompt with huge files or irrelevant content
-                        # We need to summerise the content of the file if it's too long, keep it in DB and retrieve relevant parts on demand in the future
-                        # we can keep it in the Attention in the settion and retrieve it on demand when the user references it, instead of putting the whole content in the prompt each time
-
-                        enriched_prompt += f"\n[Content of {filename}]:\n{f.read()}\n"
-                        enriched_prompt += "-----------------\n"
-                except Exception as e:
-                    # We return the error inside the prompt so the AI knows it failed
-                    enriched_prompt += f"\n[System Error: Could not read '{filename}': {e}]\n"
-        enriched_prompt += "---------- END OF ATTACHED FILES ----------\n\n"
+    enriched_prompt += sync_files_to_context(session_context, file_matches)
     
     # 4. Inject Available Actions (Skills from Cerebellum)
 
