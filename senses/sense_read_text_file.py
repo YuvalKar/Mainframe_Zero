@@ -1,5 +1,5 @@
 """
-NAME: skill_read_text_file
+NAME: sense_read_text_file
 DESCRIPTION: Reads the content of a specified text file.
 
 Input Arguments:

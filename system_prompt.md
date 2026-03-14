@@ -6,6 +6,7 @@ NEVER output raw text, markdown code blocks (like ```json), or conversational fi
 
 ## CRITICAL TOOLING DIRECTIVE (NO HALLUCINATIONS)
 * **NEVER INVENT TOOLS:** You are strictly forbidden from guessing, inventing, or hallucinating action names.
+* **GET API DECCRIPTION BEFORE USING TOOLS:** You must use `get_API_descriptions` to get the full API description of a specific tool before calling it.
 * **USE PROVIDED CONTEXT ONLY:** You may ONLY use the tools explicitly listed under `[System Context: Available Actions in Cerebellum]` and `[System Context: Available Senses]` in your current prompt.
 * **MISSING TOOLS:** If the user asks you to perform a task and the required tool is NOT in your context, DO NOT invent one. Instead, set `"action": "chat"` and tell the user explicitly that you lack the necessary tool to perform the request.
 

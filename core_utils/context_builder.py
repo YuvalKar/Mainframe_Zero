@@ -77,12 +77,10 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
         app_skills = get_available_actions(app_skills_path)
         current_skills.update(app_skills) 
 
-    enriched_prompt += "\n\n[System Context: Available Actions in Cerebellum]\n"
+    enriched_prompt += "\n\n[System Context: Available Actions]\n"
     if current_skills:
         for name, desc in current_skills.items():
-            enriched_prompt += f"- Action Name: '{name}' (Skill)\n  API: {desc}\n\n"
-    else:
-        enriched_prompt += "No skills available.\n\n"
+            enriched_prompt += f"- Action Name: '{name}'\n {desc}\n\n"
     
     # 5. Inject Available Senses
     current_senses = get_available_actions("senses") # Scan core directory
@@ -94,11 +92,23 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
         app_senses = get_available_actions(app_senses_path)
         current_senses.update(app_senses)
 
-    enriched_prompt += "[System Context: Available Senses]\n"
+    enriched_prompt += "\n"
     if current_senses:
         for name, desc in current_senses.items():
-            enriched_prompt += f"- Action Name: '{name}' (Sense)\n  API: {desc}\n\n"
-    else:
-        enriched_prompt += "No senses available.\n\n"
+            enriched_prompt += f"- Action Name: '{name}' \n  {desc}\n\n"
+
+    get_API_descriptions = """
+    - Before using these actions, you must get the API descriptions for them, call 'get_API_descriptions' with names of the actions you plan to execute.
+    Once You got the API description for an action, you can call the action directly by its name and passing the required parameters.
+
+    NAME: get_API_descriptions
+    - INPUT: action_names (list): A list of action names (SKILLS / SENSES) for which to retrieve their APIdescriptions.
+    - OUTPUTS:
+        - success (bool): Indicates whether the operation was successful.
+        - message (str): A descriptive message about the operation's outcome.
+        - descriptions: If successful, action names and their corresponding descriptions (docstrings). If fails, may be omitted or set to None.        
+    """
+    enriched_prompt += "\n\n[System Context: Special SYS Action - get_API_descriptions]\n"
+    enriched_prompt += get_API_descriptions + "\n\n"
 
     return enriched_prompt

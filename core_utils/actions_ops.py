@@ -9,37 +9,12 @@ def execute_single_action(session_context: dict, action_name: str, action_data: 
     Checks app-specific directories first, then falls back to core directories.
     Returns the execution result as a string (no direct prints).
     """
+    # SYS action first, as it's a special case that doesn't require searching for a file
+    if (action_name == 'get_API_descriptions'):
+        res = get_API_descriptions(**action_data,  session_context=session_context)
+        return f"Action '{action_name}': {res}"
     
-    target_path = None
-
-    # Extract app name from the session
-    active_attention = session_context.get("active_attention")
-    app_name = active_attention.get("required_app") if active_attention else None
-
-    # 1. Define the possible directory paths to search
-    search_paths = []
-
-    # App-specific paths get priority (specialized skills over general ones)
-    if app_name:
-        search_paths.extend([
-            os.path.join("apps", app_name, "cerebellum"),
-            os.path.join("apps", app_name, "senses"),
-            # os.path.join("apps", app_name, "hippocampus")
-        ])
-
-    # Core paths as fallback
-    search_paths.extend([
-        "cerebellum",
-        "senses",
-        # "hippocampus"
-    ])
-
-    # 2. Search for the action file in the defined paths
-    for base_path in search_paths:
-        potential_path = os.path.join(base_path, f"{action_name}.py")
-        if os.path.exists(potential_path):
-            target_path = potential_path
-            break # Found the file, stop searching
+    target_path = fined_single_action(session_context, action_name)
 
     if not target_path:
         return f"Action '{action_name}': Failed (Not Found in any known directory)"
@@ -51,7 +26,15 @@ def execute_single_action(session_context: dict, action_name: str, action_data: 
         spec.loader.exec_module(module)
         
         res = module.execute(**action_data)
-        return f"Action '{action_name}': {res}"
+
+        API_warning = ''
+        if res.get("success") == False:
+            API_description = get_API_descriptions(action_name,  session_context=session_context)
+            API_description_data = API_description.get("data", {}).get(action_name, "No description available.")
+            API_warning += f"USE THE API FOR '{action_name}' --> {API_description_data}': {res}"
+            
+        return f"Action '{action_name}': {res}" + API_warning
+        
     except Exception as ex:
         return f"Action '{action_name}': Execution failed - {str(ex)}"
     
@@ -62,32 +45,13 @@ def execute_direct(action_name: str, action_data: dict, session_context: dict) -
     Executes a sense/skill and returns the RAW dictionary result.
     Perfect for UI requests via WebSocket.
     """
-    target_path = None
 
-    # 1. Check if there's an active app based on current attention
-    # Extract app name from the session
-    if session_context is None:
-        app_name = None
-    else:
-        active_attention = session_context.get("active_attention")
-        app_name = active_attention.get("required_app") if active_attention else None
+    # SYS action first, as it's a special case that doesn't require searching for a file
+    if (action_name == 'get_API_descriptions'):
+        res = get_API_descriptions(**action_data,  session_context=session_context)
+        return f"Action '{action_name}': {res}"
 
-    # 2. Define the search paths (App specific first, then core)
-    search_paths = []
-    if app_name:
-        search_paths.extend([
-            os.path.join("apps", app_name, "cerebellum"),
-            os.path.join("apps", app_name, "senses"),
-        ])
-
-    search_paths.extend(["cerebellum", "senses"])
-
-    # 3. Search for the action file
-    for base_path in search_paths:
-        potential_path = os.path.join(base_path, f"{action_name}.py")
-        if os.path.exists(potential_path):
-            target_path = potential_path
-            break 
+    target_path = fined_single_action(session_context, action_name)
 
     if not target_path:
         return {"success": False, "message": f"Action '{action_name}' Not Found."}
@@ -133,7 +97,12 @@ def get_available_actions(directory_path: str) -> dict:
                 
                 # Extract the module docstring
                 description = ast.get_docstring(parsed_tree)
-                
+
+                # take only the NAME add DESCRIPTION (first 2 lines), ignore the rest of the docstring if it has multiple lines
+                if description:
+                    description_lines = description.strip().splitlines()
+                    description = "\n".join(description_lines[:2])  # Keep only the first 2 lines of the docstring 
+                                
                 # Save the description or a fallback message
                 available_actions[action_name] = description.strip() if description else 'No description provided.'
                 
@@ -141,3 +110,86 @@ def get_available_actions(directory_path: str) -> dict:
                 available_actions[action_name] = f'Error parsing description safely: {e}'
 
     return available_actions
+
+#######################################################
+def get_API_descriptions(action_names: list, session_context: dict) -> dict:
+
+    if not isinstance(action_names, list) or not all(isinstance(name, str) for name in action_names):
+        return {"success": False, "message": "Invalid input: 'action_names' must be a list of strings."}
+    
+    descriptions = {}
+    
+    for action_name in action_names:
+        action_path = fined_single_action(session_context, action_name)
+        description = get_detailed_actions(action_path)
+        descriptions[action_name] = description
+
+    return {
+        "success": True,
+        "message": f"Successfully retrieved API descriptions for {len(descriptions)} actions. You may call them directly using their names.",
+        "data": descriptions
+    }
+
+#######################################################
+def get_detailed_actions(action_path: str) -> dict:
+    """
+    returns a specific action full docstring
+    """
+    try:
+        # Read the file purely as text
+        with open(action_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
+
+        # Parse the abstract syntax tree SAFELY (no execution)
+        parsed_tree = ast.parse(file_content)
+        
+        # Extract the module docstring
+        description = ast.get_docstring(parsed_tree)
+
+        # return the full docstring or a fallback message
+        return description.strip() if description else 'No docstring provided.'
+        
+    except Exception as e:
+        return f'Error parsing docstring safely: {e}'
+
+##########################################
+def fined_single_action(session_context: dict, action_name: str) -> str:    
+    """
+    Locates the action file and returns its full path.
+    Checks app-specific directories first, then falls back to core directories.
+    """
+    target_path = None
+
+    # Extract app name from the session
+    active_attention = session_context.get("active_attention")
+    app_name = active_attention.get("required_app") if active_attention else None
+
+    # 1. Define the possible directory paths to search
+    search_paths = []
+
+    # App-specific paths get priority (specialized skills over general ones)
+    if app_name:
+        search_paths.extend([
+            os.path.join("apps", app_name, "cerebellum"),
+            os.path.join("apps", app_name, "senses"),
+            # os.path.join("apps", app_name, "hippocampus")
+        ])
+
+    # Core paths as fallback
+    search_paths.extend([
+        "cerebellum",
+        "senses",
+        # "hippocampus"
+    ])
+
+    # 2. Search for the action file in the defined paths
+    for base_path in search_paths:
+        potential_path = os.path.join(base_path, f"{action_name}.py")
+        if os.path.exists(potential_path):
+            target_path = potential_path
+            break # Found the file, stop searching
+
+    if not target_path:
+        print(f"Action '{action_name}': Failed (Not Found in any known directory)")
+    
+    return target_path
