@@ -4,7 +4,6 @@ from database.db_attention import (
     get_attention_record,
     search_attentions_db,
     bump_attention,
-    update_attention_record,
     get_attention_context_tree
 )
 
@@ -25,14 +24,28 @@ def create_attention(name: str, required_app: str = None, parent_id: str = None,
     
     success = create_attention_record(
         attention_id=attention_id,
+        parent_id=parent_id,
         name=name,
         required_app=required_app,
-        parent_id=parent_id,
         tags=tags,
         short_summary=short_summary,
         detailed_summary=detailed_summary,
         working_files=working_files
     )
+    
+    # attentions (
+    #         id VARCHAR(50) PRIMARY KEY,
+    #         parent_id VARCHAR(50) REFERENCES attentions(id) ON DELETE CASCADE,
+    #         name VARCHAR(255) NOT NULL,
+    #         required_app VARCHAR(100),
+    #         tags JSONB DEFAULT '[]'::jsonb,
+    #         status VARCHAR(50) DEFAULT 'ready',
+    #         short_summary TEXT,
+    #         detailed_summary TEXT,
+    #         working_files JSONB DEFAULT '[]'::jsonb,
+    #         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    #         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    # )
     
     if success:
         # Load it right back to get the full record with timestamps
@@ -57,27 +70,21 @@ def load_attention(attention_id: str) -> dict:
     return None
 
 ##########################################
-def search_attentions(app_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
+def search_attentions(app_filter: str = None, status_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
     """
     Searches the database for Attentions matching the criteria.
     Results are automatically ordered by the most recently updated.
     """
     return search_attentions_db(
         app_filter=app_filter, 
+        status_filter=status_filter,
         tag_filter=tag_filter, 
         name_filter=name_filter
     )
 
 #########################################
-def update_attention(attention_id: str, **kwargs) -> bool:
-    """
-    Updates specific fields of an Attention.
-    Automatically bumps the updated_at timestamp.
-    """
-    success = update_attention_record(attention_id, **kwargs)
-    if not success:
-        print(f"[Attention Ops] Warning: Failed to update attention '{attention_id}'.")
-    return success
+# def update_attention(attention_id: str, **kwargs) -> bool:
+# REMOVED - handled using the asinq worker !
 
 #########################################
 def get_lod_context(attention_id: str) -> dict:

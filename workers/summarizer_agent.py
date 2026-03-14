@@ -1,12 +1,12 @@
 """
-SummarizerAgent
+Summarizer Agent
 
 Used for generating summaries of conversations or toehr text data.
 This agent operates independently of the main chat loop to ensure that it can process summarization tasks without interfering with ongoing conversations.
 
 INPUT: task_data: dict
 - data: text (like - the conversation history to summarize)
-- summary_type: dict with values of summary length to be created {40, 120, 500}
+- summary_lengths: dict with values of summary length to be created {40, 120, 500}
 OUTPUT: a dict with the following structure:
 {
     "summary_requested_length": int, # The length of the summary that was requested (e.g., 40, 120, 500)
@@ -41,7 +41,7 @@ class SummarizerAgent(BaseWorker):
         data = task_data.get("data")
         
         # Extracting the requested lengths, defaulting to [120] if empty
-        summary_lengths = task_data.get("summary_type", [120])
+        summary_lengths = task_data.get("summary_lengths", [120])
 
         print(f"[{self.name}] Generating summaries for lengths: {summary_lengths}...")
 
