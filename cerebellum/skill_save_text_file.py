@@ -1,7 +1,6 @@
 """
 NAME: skill_save_text_file
-DESCRIPTION: Save a given string of text content to a specified file_path.
-            It acts as a universal utility for persisting generated code, documentation, or any text-based data to the filesystem.
+DESCRIPTION: Save a given string of text content to a specified file_path. It acts as a universal utility for persisting generated code, documentation, or any text-based data to the filesystem.
 
 Input Arguments:
     content (str): The text content string to be saved to the file.
