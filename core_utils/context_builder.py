@@ -50,16 +50,19 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     
     # 3. If there are file references, read their content and inject into the prompt
     if file_matches:
-        enriched_prompt += "\n\n--- Attached Files Context ---\n"
+        enriched_prompt += "\n\n--- Attached Files ---\n"
         for filename in file_matches:
             if os.path.exists(filename):
                 try:
                     with open(filename, 'r', encoding='utf-8') as f:
+                        # TBD: We may want to add some kind of file size limit or content filtering here in the future to avoid overwhelming the prompt with huge files or irrelevant content
+                        # We need to summerise the content of the file if it's too long, keep it in DB and retrieve relevant parts on demand in the future
                         enriched_prompt += f"\n[Content of {filename}]:\n{f.read()}\n"
+                        enriched_prompt += "-----------------\n"
                 except Exception as e:
                     # We return the error inside the prompt so the AI knows it failed
                     enriched_prompt += f"\n[System Error: Could not read '{filename}': {e}]\n"
-        enriched_prompt += "------------------------------\n"
+        enriched_prompt += "---------- END OF ATTACHED FILES ----------\n\n"
     
     # 4. Inject Available Actions (Skills from Cerebellum)
 
