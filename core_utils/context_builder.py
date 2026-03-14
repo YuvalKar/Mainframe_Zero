@@ -57,6 +57,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
                     with open(filename, 'r', encoding='utf-8') as f:
                         # TBD: We may want to add some kind of file size limit or content filtering here in the future to avoid overwhelming the prompt with huge files or irrelevant content
                         # We need to summerise the content of the file if it's too long, keep it in DB and retrieve relevant parts on demand in the future
+                        # we can keep it in the Attention in the settion and retrieve it on demand when the user references it, instead of putting the whole content in the prompt each time
+
                         enriched_prompt += f"\n[Content of {filename}]:\n{f.read()}\n"
                         enriched_prompt += "-----------------\n"
                 except Exception as e:

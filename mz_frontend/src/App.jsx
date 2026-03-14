@@ -3,9 +3,14 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Terminal from './components/Terminal'
 import FileExplorer from './components/FileExplorer'
+// 1. Import our new component
+import DocumentViewer from './components/DocumentViewer'
 
 function App() {
   const [attentionShelf, setAttentionShelf] = useState([]);
+  
+  // 2. Add the state for the currently active document in the viewer
+  const [activeDocument, setActiveDocument] = useState(null);
   
   // Panel state
   const [isLeftOpen, setIsLeftOpen] = useState(true);
@@ -49,6 +54,10 @@ function App() {
     setAttentionShelf(prev => {
       const exists = prev.find(f => f.path === fileNode.path);
       if (exists) {
+        // 3. If removing from shelf, also clear the viewer if it was the active one
+        if (activeDocument && activeDocument.path === fileNode.path) {
+          setActiveDocument(null);
+        }
         return prev.filter(f => f.path !== fileNode.path);
       } else {
         return [...prev, { ...fileNode, sent: false }];
@@ -59,9 +68,7 @@ function App() {
   // Calculate dynamic widths: Collapsed panels take exactly 4%
   const getColumnWidths = () => {
     const leftWidth = isLeftOpen ? 20 : 4;
-    // If right is open, it shares the remaining space with the center. If closed, it takes 4%.
     const rightWidth = isRightOpen ? (100 - leftWidth) / 2 : 4;
-    // Center takes whatever is left
     const centerWidth = 100 - leftWidth - rightWidth;
 
     return {
@@ -119,6 +126,9 @@ function App() {
             sendCommand={sendCommand}
             latestMessage={latestMessage}
             isConnected={isConnected}
+            // Passing down the active document state
+            activeDocument={activeDocument}
+            setActiveDocument={setActiveDocument}
           />
         </div>
       </div>
@@ -163,20 +173,13 @@ function App() {
             </h3>
           </div>
 
-          <div style={{ 
-            flex: 1, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            backgroundColor: '#ffffff',
-            border: '1px dashed var(--border-color)',
-            borderRadius: '8px',
-            color: 'var(--text-muted)',
-            fontStyle: 'italic',
-            fontSize: '0.9em'
-          }}>
-            Select a file to preview or edit...
-          </div>
+          {/* 4. Our new actual Document Viewer component */}
+          <DocumentViewer 
+            activeDocument={activeDocument}
+            sendCommand={sendCommand}
+            latestMessage={latestMessage}
+            isConnected={isConnected}
+          />
 
         </div>
       </div>

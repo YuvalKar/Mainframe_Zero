@@ -110,7 +110,15 @@ const FileTreeNode = ({ node, toggleAttention, attentionShelf }) => {
 
 // --- Main FileExplorer Component ---
 
-export default function FileExplorer({ attentionShelf, toggleAttention, sendCommand, latestMessage, isConnected }) {
+export default function FileExplorer({ 
+  attentionShelf, 
+  toggleAttention, 
+  sendCommand, 
+  latestMessage, 
+  isConnected,
+  activeDocument,     // New prop
+  setActiveDocument   // New prop
+}) {
   const [treeData, setTreeData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -184,45 +192,57 @@ export default function FileExplorer({ attentionShelf, toggleAttention, sendComm
         {attentionShelf.length === 0 ? (
           <div style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em", paddingLeft: "10px" }}>No files selected...</div>
         ) : (
-          attentionShelf.map((file, idx) => (
-            <div key={idx} style={{ 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: "center",
-              marginBottom: "8px", 
-              padding: "6px 10px", 
-              // Changed background and border for sent files
-              backgroundColor: file.sent ? "#e6f4ea" : "#ffffff", 
-              border: file.sent ? "1px solid #ceead6" : "1px solid var(--border-color)",
-              borderRadius: "4px", 
-              fontSize: "0.85em",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-              transition: "background-color 0.3s ease" // Smooth transition
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
-                {/* Replaced hourglass with a clean checkmark for sent files */}
-                <span style={{ fontSize: "1.1em", color: file.sent ? "#1e8e3e" : "inherit" }}>
-                  {file.sent ? "✓" : "⏳"}
-                </span>
-                <span style={{ 
-                  overflow: "hidden", 
-                  textOverflow: "ellipsis", 
-                  whiteSpace: "nowrap",
-                  color: file.sent ? "#1e8e3e" : "var(--text-main)",
-                  fontWeight: file.sent ? "500" : "400"
-                }}>
-                  {file.name}
+          attentionShelf.map((file, idx) => {
+            // Check if this file is the one currently showing in the viewer
+            const isActive = activeDocument && activeDocument.path === file.path;
+
+            return (
+              <div 
+                key={idx} 
+                onClick={() => setActiveDocument(file)} // Set active on click
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center",
+                  marginBottom: "8px", 
+                  padding: "6px 10px", 
+                  // Visual feedback: blueish if active, greenish if sent, white otherwise
+                  backgroundColor: isActive ? "#e8f0fe" : (file.sent ? "#e6f4ea" : "#ffffff"), 
+                  border: isActive ? "1px solid #1a73e8" : (file.sent ? "1px solid #ceead6" : "1px solid var(--border-color)"),
+                  borderRadius: "4px", 
+                  fontSize: "0.85em",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer" // Pointer implies it's clickable
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+                  <span style={{ fontSize: "1.1em", color: file.sent ? "#1e8e3e" : "inherit" }}>
+                    {file.sent ? "✓" : "⏳"}
+                  </span>
+                  <span style={{ 
+                    overflow: "hidden", 
+                    textOverflow: "ellipsis", 
+                    whiteSpace: "nowrap",
+                    color: isActive ? "#1a73e8" : (file.sent ? "#1e8e3e" : "var(--text-main)"),
+                    fontWeight: (isActive || file.sent) ? "500" : "400"
+                  }}>
+                    {file.name}
+                  </span>
+                </div>
+                <span 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the parent div onClick from firing
+                    toggleAttention(file);
+                  }} 
+                  style={{ cursor: "pointer", color: "#9aa0a6", fontWeight: "bold", fontSize: "1.2em", paddingLeft: "10px" }}
+                  title="Remove"
+                >
+                  ×
                 </span>
               </div>
-              <span 
-                onClick={() => toggleAttention(file)} 
-                style={{ cursor: "pointer", color: "#9aa0a6", fontWeight: "bold", fontSize: "1.2em", paddingLeft: "10px" }}
-                title="Remove"
-              >
-                ×
-              </span>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
