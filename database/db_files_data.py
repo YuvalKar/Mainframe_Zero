@@ -27,8 +27,8 @@ def init_files_data_db():
             file_path TEXT NOT NULL,
             section_name VARCHAR(255) DEFAULT '',
             file_last_modified TIMESTAMP WITH TIME ZONE,
-            short_summary VARCHAR(120),
-            long_summary VARCHAR(1200),
+            short_summary TEXT,
+            long_summary TEXT,
             tags JSONB,
             UNIQUE (file_path, section_name)
         );

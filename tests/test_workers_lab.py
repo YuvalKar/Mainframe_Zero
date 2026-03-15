@@ -51,7 +51,7 @@ async def run_lab_test():
         
         print("================ TEST RESULT ================")
         # Using pprint to make the dictionary output easily readable
-        print(result, width=100)
+        print(result)
         print("=============================================\n")
         print("[Lab Test] Success! The workers processed the task correctly.")
 

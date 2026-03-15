@@ -34,6 +34,13 @@ class SummarizeDocAgent(BaseWorker):
         # Extracting the file path to summarize
         file_path = task_data.get("file_path")
 
+        if not file_path:
+            print(f"[{self.name}] Error: No file path provided in task data.")
+            return None
+        
+        # Convert to absolute path to ensure consistency in the DB
+        file_path = os.path.abspath(file_path)
+
         # Check if the file exists
         if not file_path or not os.path.isfile(file_path):
             print(f"[{self.name}] Error: File '{file_path}' not found.")
