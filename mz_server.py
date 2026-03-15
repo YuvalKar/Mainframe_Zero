@@ -26,6 +26,13 @@ async def handle_chat(payload: dict, websocket: WebSocket, stream_callback):
     user_input = payload.get("content", "")
     print(f"[Server] Processing chat input: {user_input}")
     
+    # --- NEW: Catch the UI context and save it to the session ---
+    client_context = payload.get("client_context", {})
+    if client_context:
+        mz_chat_session["client_context"] = client_context
+        # הודעת דיבאג קטנה שנוכל לראות שזה עובד
+        print(f"[Server] Caught UI context from client") 
+    
     # 1. Pass the session context (mz_chat_session) to enrich_prompt
     final_prompt = context_builder.enrich_prompt(mz_chat_session, user_input)
     
@@ -33,7 +40,7 @@ async def handle_chat(payload: dict, websocket: WebSocket, stream_callback):
     await mz_core.run_agentic_loop(
         mz_chat_session, 
         final_prompt, 
-        raw_user_input=user_input, # We need this to save the history!
+        raw_user_input=user_input, 
         emit_callback=stream_callback
     )
 

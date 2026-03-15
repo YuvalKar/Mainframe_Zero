@@ -64,9 +64,10 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     if (!userInput.trim() || !isConnected) return;
 
     // Find unsent files
-    // const filesToSend = attentionShelf.filter(f => !f.sent);
-    const filesToSend = attentionShelf;
-    const contextString = filesToSend.map(f => `@${f.path}`).join(" ");
+    const filesToSend = attentionShelf.filter(f => !f.sent);
+    // const filesToSend = attentionShelf;
+    // const contextString = filesToSend.map(f => `@${f.path}`).join(" ");
+    const contextString = ""
     
     // Prepare string for UI vs Backend
     setChatLog(prev => [...prev, { type: "user", content: userInput }]);

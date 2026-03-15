@@ -11,7 +11,9 @@ function App() {
   
   // 2. Add the state for the currently active document in the viewer
   const [activeDocument, setActiveDocument] = useState(null);
-  
+  // Add state to hold the currently selected text from the viewer
+  const [selectedText, setSelectedText] = useState("");
+
   // Panel state
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [isRightOpen, setIsRightOpen] = useState(false); 
@@ -46,7 +48,24 @@ function App() {
   // Generic sender function passed to children
   const sendCommand = (payload) => {
     if (wsRef.current && isConnected) {
-      wsRef.current.send(JSON.stringify(payload));
+      
+      // Enhance the payload with our current UI context
+      const enhancedPayload = {
+        ...payload,
+        client_context: {
+          activeDocument: activeDocument ? activeDocument.path : null,
+          selectedText: selectedText || null,
+          // Extract only the paths, and filter out the active document to avoid duplication
+          attentionShelf: attentionShelf
+            .filter(f => !activeDocument || f.path !== activeDocument.path)
+            .map(f => f.path)
+        }
+      };
+
+      // Optional: Log it just to see the magic happening before it leaves the browser
+      console.log("Sending payload to server:", enhancedPayload);
+
+      wsRef.current.send(JSON.stringify(enhancedPayload));
     }
   };
 
@@ -179,6 +198,8 @@ function App() {
             sendCommand={sendCommand}
             latestMessage={latestMessage}
             isConnected={isConnected}
+            // Catch the selected text and save it in our new state
+            onSelectionChange={setSelectedText}
           />
 
         </div>

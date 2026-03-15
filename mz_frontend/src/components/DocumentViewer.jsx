@@ -5,9 +5,20 @@ import { useState, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-export default function DocumentViewer({ activeDocument, sendCommand, latestMessage, isConnected }) {
+export default function DocumentViewer({ activeDocument, sendCommand, latestMessage, isConnected, onSelectionChange }) {
   const [fileContent, setFileContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 1. Add our selection handler
+  const handleSelection = () => {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    
+    // Send the text up to App.jsx (even if it's empty, so we know they cleared the selection)
+    if (onSelectionChange) {
+      onSelectionChange(selectedText);
+    }
+  };
 
   // 2. Helper function to determine the language from the file extension
   const getLanguage = (filename) => {
@@ -27,7 +38,7 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     return languageMap[ext] || 'text'; // Fallback to plain text if unknown
   };
 
-  // Fetch file content when activeDocument changes
+  // 3.Fetch file content when activeDocument changes
   useEffect(() => {
     if (isConnected && activeDocument) {
       setIsLoading(true);
@@ -82,21 +93,24 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
         {activeDocument.name}
       </div>
       
-      <div style={{ 
-        flex: 1, 
-        overflowY: "auto", 
-        backgroundColor: "#f8f9fa", 
-        borderRadius: "6px",
-        border: "1px solid var(--border-color)",
-        color: "var(--text-main)"
-      }}>
+      <div 
+        // Attach the listener to this container
+        onMouseUp={handleSelection}
+        style={{ 
+          flex: 1, 
+          overflowY: "auto", 
+          backgroundColor: "#f8f9fa", 
+          borderRadius: "6px",
+          border: "1px solid var(--border-color)",
+          color: "var(--text-main)"
+        }}
+      >
         {isLoading ? (
           <div style={{ padding: "15px", color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em" }}>
             Loading content...
           </div>
         ) : (
-          /* 3. Wrap the content with the SyntaxHighlighter */
-          <SyntaxHighlighter 
+          <SyntaxHighlighter
             language={getLanguage(activeDocument.name)} 
             style={vs}
             customStyle={{

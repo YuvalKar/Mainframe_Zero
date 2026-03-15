@@ -28,8 +28,7 @@ _client = genai.Client()
 # BACKGROUND WORKERS INITIALIZATION
 # ==========================================
 # Keeping references to workers and background tasks to prevent garbage collection
-active_workers = {}
-worker_tasks = []
+from workers.worker_registry import active_workers, worker_tasks
 
 async def init_workers():
     """
@@ -104,6 +103,13 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                 )
 
             response = await asyncio.to_thread(_call_gemini)
+
+            # --- NEW SAFETY CHECK ---
+            if not response or not response.text:
+                await log_and_emit("error", "Received an empty response from the AI engine.")
+                log_pipeline_step(log_file, "backend_error", "response.text was empty or None.")
+                break
+
             log_pipeline_step(log_file, "backend_api_response_raw", {"loop": loop_counter, "raw_text": response.text})
 
             ai_data = json.loads(response.text)

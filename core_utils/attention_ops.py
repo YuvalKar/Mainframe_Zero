@@ -1,4 +1,9 @@
+import asyncio
 import uuid
+import os
+import datetime
+from database.db_files_data import get_file_data
+from workers.worker_registry import active_workers
 from database.db_attention import (
     create_attention_record,
     get_attention_record,
@@ -96,6 +101,95 @@ def get_lod_context(attention_id: str) -> dict:
     if not tree:
         print(f"[Attention Ops] Warning: Could not fetch LOD tree for '{attention_id}'.")
     return tree
+
+#########################################
+def update_session_attention(session_context: dict, active_file: str = None, context_files: list = None) -> None:
+    """
+    Updates the session's active attention with the current UI and terminal context.
+    Implements a 3-layer caching strategy: Session Cache -> DB Cache -> Fallback to Worker.
+    """
+    if active_file and os.path.exists(active_file):
+        active_file = os.path.abspath(active_file)
+    
+    if context_files is None:
+        context_files = []
+        
+    # 1. Ensure active_attention exists in the session_context
+    if "active_attention" not in session_context:
+        from core_utils.attention_ops import create_attention
+        session_context["active_attention"] = create_attention(name="Dynamic UI Attention")
+        
+    active_attention = session_context["active_attention"]
+    
+    # Ensure working_files is a dictionary, not a list
+    if "working_files" not in active_attention or not isinstance(active_attention["working_files"], dict):
+        active_attention["working_files"] = {}
+        
+    working_files = active_attention["working_files"]   
+
+    # 2. Combine files into a unique set to avoid redundant processing
+    files_to_process = set(context_files)
+    if active_file:
+        files_to_process.add(active_file)
+
+    # 3. Process each file using the 3-layer lazy loading logic
+    for file_path in files_to_process:
+        if not os.path.exists(file_path):
+            continue
+
+        try:
+            # Use UTC timestamp to match database format and prevent comparison issues
+            current_mtime_float = os.path.getmtime(file_path)
+            current_mtime = datetime.datetime.fromtimestamp(current_mtime_float, tz=datetime.timezone.utc)
+
+            # --- Layer 1: Session Cache (Short-term memory) ---
+            cached_file = working_files.get(file_path)
+            if cached_file and cached_file.get("status") == "ready" and cached_file.get("last_modified") == current_mtime:
+                # File is already up-to-date in the current session
+                cached_file["is_active"] = (file_path == active_file)
+                continue 
+
+            # --- Layer 2: DB Cache (Long-term memory) ---
+            db_data = get_file_data(file_path)
+            is_fresh_in_db = db_data and db_data.get("file_last_modified") == current_mtime
+
+            if is_fresh_in_db and db_data.get("long_summary"):
+                # Load existing summary from Database
+                working_files[file_path] = {
+                    "path": file_path,
+                    "status": "ready",
+                    "last_modified": current_mtime,
+                    "long_summary": db_data["long_summary"],
+                    "short_summary": db_data.get("short_summary", ""),
+                    "is_active": (file_path == active_file)
+                }
+                continue
+
+            # --- Layer 3: Fallback & Background Worker Dispatch ---
+            # File is new or modified; provide temp lines while worker processes the full summary
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            preview = "".join(lines[:20])
+            
+            working_files[file_path] = {
+                "path": file_path,
+                "status": "pending_worker",
+                "last_modified": current_mtime,
+                "long_summary": f"[Temp Preview - Processing Background Summary...]\n{preview}...\n",
+                "short_summary": "Processing...",
+                "is_active": (file_path == active_file)
+            }
+            
+            # Dispatch summarization task (Fire and Forget)
+            doc_agent = active_workers.get("doc_agent")
+            if doc_agent:
+                # Use the running loop to schedule the async task from a sync function
+                loop = asyncio.get_running_loop()
+                loop.create_task(doc_agent.add_task({"file_path": file_path}))
+
+        except Exception as e:
+            print(f"[Attention Ops Error] Could not process {file_path}: {e}")
 
 #########################################
 def shift_attention(session_context: dict, attention_id: str) -> bool:
