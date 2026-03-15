@@ -6,7 +6,7 @@ This agent operates independently of the main chat loop to ensure that it can pr
 
 INPUT: task_data: dict
 - data: text (like - the conversation history to summarize)
-- summary_lengths: dict with values of summary length to be created {40, 120, 500}
+- summary_lengths: list with values of summary length to be created {40, 120, 500}
 OUTPUT: a dict with the following structure:
 {
     "summary_requested_length": int, # The length of the summary that was requested (e.g., 40, 120, 500)

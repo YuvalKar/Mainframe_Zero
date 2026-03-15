@@ -17,10 +17,11 @@ from workers.worker_base import BaseWorker
 from workers.summarizer_agent import SummarizerAgent
 
 class AttentionWorker(BaseWorker):
-    def __init__(self):
+    
+    # We now accept the shared summarizer from the outside (Dependency Injection)
+    def __init__(self, summarizer: SummarizerAgent):
         super().__init__(name="AttentionWorker")
-        # Instantiate the summarizer to be used within this worker
-        self.summarizer = SummarizerAgent()
+        self.summarizer = summarizer
 
     async def process_task(self, task_data: dict):
         attention_id = task_data.get("attention_id")
@@ -58,8 +59,11 @@ class AttentionWorker(BaseWorker):
                 "summary_lengths": summary_lengths
             }
 
-            # Call summarizer_agent directly (process_task returns the result dict)
-            summary_result = await self.summarizer.process_task(summarizer_task)
+            # 1. Take a number in line and get a beeper (Future)
+            beeper = await self.summarizer.add_task(summarizer_task)
+            
+            # 2. Wait until the summarizer finishes the task and rings the beeper
+            summary_result = await beeper
 
             # Map the returned summaries to the correct database fields
             if "summaries" in summary_result:

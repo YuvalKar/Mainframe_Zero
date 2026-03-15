@@ -13,13 +13,49 @@ from core_utils.session_manager import log_pipeline_step
 # Import memory DB functions for short-term history
 from database.db_chat_history import save_chat_history_turn
 
+# Workers
+from workers.summarizer_agent import SummarizerAgent
+from workers.summarize_doc_agent import SummarizeDocAgent
+from workers.attention_worker import AttentionWorker
+
 # Load environment variables where the core actually needs them
 load_dotenv()
 
 # We can keep a single client instance for the core to use
 _client = genai.Client()
 
+# ==========================================
+# BACKGROUND WORKERS INITIALIZATION
+# ==========================================
+# Keeping references to workers and background tasks to prevent garbage collection
+active_workers = {}
+worker_tasks = []
 
+async def init_workers():
+    """
+    Initializes all background agents, injects dependencies, and starts their queues.
+    """
+    print("[Core] Initializing background workers...")
+    
+    # 1. Initialize the shared summarizer ONCE
+    shared_summarizer = SummarizerAgent()
+    
+    # 2. Initialize other workers with dependency injection (passing the shared summarizer)
+    doc_agent = SummarizeDocAgent(summarizer=shared_summarizer)
+    attention_worker = AttentionWorker(summarizer=shared_summarizer)
+    
+    # 3. Store them globally in the core so other actions can access them later
+    active_workers["summarizer"] = shared_summarizer
+    active_workers["doc_agent"] = doc_agent
+    active_workers["attention"] = attention_worker
+    
+    # 4. Turn them on (start the background queue loops)
+    worker_tasks.append(asyncio.create_task(shared_summarizer.start()))
+    worker_tasks.append(asyncio.create_task(doc_agent.start()))
+    worker_tasks.append(asyncio.create_task(attention_worker.start()))
+    
+    print("[Core] All background workers are online and listening.")
+    
 #########################################
 async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_input: str = "", emit_callback=None) -> dict:
     """

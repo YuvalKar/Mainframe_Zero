@@ -98,6 +98,10 @@ async def lifespan(app: FastAPI):
     
     try:
         mz_chat_session = session_manager.init_session()
+        
+        # --- Turn on the background workers ---
+        await mz_core.init_workers()
+        
         print("[Server] Brain initialized successfully.")
     except Exception as e:
         print(f"[Server Error] Failed to initialize brain: {e}")
@@ -108,6 +112,7 @@ async def lifespan(app: FastAPI):
     mz_chat_session = None
 
 app = FastAPI(title="Mainframe Zero API", lifespan=lifespan)
+
 
 app.add_middleware(
     CORSMiddleware,

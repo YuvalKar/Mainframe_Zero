@@ -22,8 +22,17 @@ def terminal_chat():
     print("========================================================\n")
 
     async def run_chat():
+        
+        # --- NEW: Initialize background workers before starting the loop ---
+        try:
+            await mz_core.init_workers()
+        except Exception as e:
+            print(f"[System Error: Failed to initialize background workers - {e}]")
+            return
+
         while True:
-            user_input = input("You: ")
+            # PRO TIP: Using to_thread prevents input() from blocking the background workers!
+            user_input = await asyncio.to_thread(input, "You: ")
             
             if user_input.lower() in ['exit', 'quit']: 
                 break
