@@ -18,7 +18,7 @@ def init_attentions_db():
         cursor.execute("DROP TABLE IF EXISTS attentions CASCADE;")
         print("[System: Existing 'attentions' table dropped (if it existed).]")
         
-        # Added short_summary, detailed_summary, and working_files
+        # Added short_summary, detailed_summary, working_files, and focus
         create_table_query = """
         CREATE TABLE attentions (
             id VARCHAR(50) PRIMARY KEY,
@@ -30,6 +30,7 @@ def init_attentions_db():
             short_summary TEXT,
             detailed_summary TEXT,
             working_files JSONB DEFAULT '[]'::jsonb,
+            focus JSONB DEFAULT '{}'::jsonb,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -59,7 +60,7 @@ def init_attentions_db():
 def create_attention_record(attention_id: str, name: str, required_app: str = None, 
                             parent_id: str = None, tags: list = None,
                             short_summary: str = None, detailed_summary: str = None, 
-                            working_files: list = None):
+                            working_files: list = None, focus: dict = None):
     """
     Inserts a new Attention node into the database.
     If parent_id is None, it acts as a root node.
@@ -73,15 +74,16 @@ def create_attention_record(attention_id: str, name: str, required_app: str = No
         
         tags_json = json.dumps(tags) if tags else '[]'
         files_json = json.dumps(working_files) if working_files else '[]'
+        focus_json = json.dumps(focus) if focus else '{}'
         
         insert_query = """
         INSERT INTO attentions (id, parent_id, name, required_app, tags, status, 
-                              short_summary, detailed_summary, working_files)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              short_summary, detailed_summary, working_files, focus)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
         cursor.execute(insert_query, (attention_id, parent_id, name, required_app, 
-                                      tags_json, "ready", short_summary, detailed_summary, files_json))
+                                      tags_json, "ready", short_summary, detailed_summary, files_json, focus_json))
         conn.commit()
         return True
         
@@ -110,7 +112,7 @@ def get_attention_record(attention_id: str) -> dict:
         
         select_query = """
         SELECT id, parent_id, name, required_app, tags, status, 
-               short_summary, detailed_summary, working_files, 
+               short_summary, detailed_summary, working_files, focus,
                created_at, updated_at
         FROM attentions
         WHERE id = %s
@@ -132,8 +134,9 @@ def get_attention_record(attention_id: str) -> dict:
             "short_summary": row[6],
             "detailed_summary": row[7],
             "working_files": row[8],
-            "created_at": row[9].isoformat() if row[9] else None,
-            "updated_at": row[10].isoformat() if row[10] else None
+            "focus": row[9],
+            "created_at": row[10].isoformat() if row[10] else None,
+            "updated_at": row[11].isoformat() if row[11] else None
         }
         
     except Exception as e:
@@ -159,7 +162,7 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
         
         query = """
         SELECT id, parent_id, name, required_app, tags, status, 
-               short_summary, detailed_summary, working_files, 
+               short_summary, detailed_summary, working_files, focus,
                created_at, updated_at 
         FROM attentions WHERE 1=1
         """
@@ -194,8 +197,9 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
                 "short_summary": row[6],
                 "detailed_summary": row[7],
                 "working_files": row[8],
-                "created_at": row[9].isoformat() if row[9] else None,
-                "updated_at": row[10].isoformat() if row[10] else None
+                "focus": row[9],
+                "created_at": row[10].isoformat() if row[10] else None,
+                "updated_at": row[11].isoformat() if row[11] else None
             })
             
         return results
@@ -253,7 +257,7 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
     Automatically bumps the updated_at timestamp.
     
     Example usage:
-    update_attention_record('attn_123', short_summary="New status", status="archived")
+    update_attention_record('attn_123', short_summary="New status", focus={"primary_file": "main.py"})
     """
     if not kwargs:
         # If no fields were passed to update, just bump the timestamp
@@ -269,7 +273,7 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
         # Whitelist of allowed columns to prevent SQL injection or accidental typos
         allowed_columns = {
             'name', 'parent_id', 'required_app', 'status', 
-            'short_summary', 'detailed_summary', 'tags', 'working_files'
+            'short_summary', 'detailed_summary', 'tags', 'working_files', 'focus'
         }
         
         set_clauses = []
@@ -279,8 +283,13 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
             if key in allowed_columns:
                 set_clauses.append(f"{key} = %s")
                 # Handle JSONB fields gracefully
-                if key in ('tags', 'working_files'):
-                    values.append(json.dumps(value) if value is not None else '[]')
+                if key in ('tags', 'working_files', 'focus'):
+                    # Use empty structures based on the expected type if None is passed
+                    if value is None:
+                        val_str = '{}' if key == 'focus' else '[]'
+                    else:
+                        val_str = json.dumps(value)
+                    values.append(val_str)
                 else:
                     values.append(value)
                     
@@ -320,7 +329,7 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
 def get_attention_context_tree(attention_id: str) -> dict:
     """
     Retrieves the Level of Detail (LOD) context tree for a given Attention ID.
-    Includes summaries and working files for context generation.
+    Includes summaries, working files, and focus for context generation.
     """
     conn = get_db_connection()
     if not conn:
@@ -333,12 +342,12 @@ def get_attention_context_tree(attention_id: str) -> dict:
         WITH RECURSIVE
         tree_up AS (
             SELECT id, parent_id, name, required_app, tags, status, 
-                   short_summary, detailed_summary, working_files, 
+                   short_summary, detailed_summary, working_files, focus,
                    0 AS lod_level, 'self'::text AS relation
             FROM attentions WHERE id = %s
             UNION
             SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
-                   a.short_summary, a.detailed_summary, a.working_files,
+                   a.short_summary, a.detailed_summary, a.working_files, a.focus,
                    tu.lod_level + 1, 'parent'::text
             FROM attentions a
             INNER JOIN tree_up tu ON a.id = tu.parent_id
@@ -346,12 +355,12 @@ def get_attention_context_tree(attention_id: str) -> dict:
         ),
         tree_down AS (
             SELECT id, parent_id, name, required_app, tags, status, 
-                   short_summary, detailed_summary, working_files,
+                   short_summary, detailed_summary, working_files, focus,
                    0 AS lod_level, 'self'::text AS relation
             FROM attentions WHERE id = %s
             UNION
             SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
-                   a.short_summary, a.detailed_summary, a.working_files,
+                   a.short_summary, a.detailed_summary, a.working_files, a.focus,
                    td.lod_level + 1, 'child'::text
             FROM attentions a
             INNER JOIN tree_down td ON a.parent_id = td.id
@@ -359,7 +368,7 @@ def get_attention_context_tree(attention_id: str) -> dict:
         ),
         siblings AS (
             SELECT a.id, a.parent_id, a.name, a.required_app, a.tags, a.status, 
-                   a.short_summary, a.detailed_summary, a.working_files,
+                   a.short_summary, a.detailed_summary, a.working_files, a.focus,
                    1 AS lod_level, 'sibling'::text AS relation
             FROM attentions a
             WHERE a.parent_id = (SELECT parent_id FROM attentions WHERE id = %s)
@@ -394,10 +403,11 @@ def get_attention_context_tree(attention_id: str) -> dict:
                 "short_summary": row[6],
                 "detailed_summary": row[7],
                 "working_files": row[8],
-                "relation": row[10] # row[9] is lod_level
+                "focus": row[9],
+                "relation": row[11] # row[10] is lod_level now
             }
             
-            lod_level = row[9]
+            lod_level = row[10]
             
             if lod_level == 0:
                 context_tree["lod_0_self"] = node
@@ -419,6 +429,6 @@ def get_attention_context_tree(attention_id: str) -> dict:
             
 ##################################
 if __name__ == "__main__":
-    # Run this once to create the new table with updated_at
+    # Run this once to create the new table with focus and updated_at
     # init_attentions_db()
     pass

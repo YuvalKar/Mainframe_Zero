@@ -32,3 +32,10 @@ def get_local_model():
         from sentence_transformers import SentenceTransformer
         _local_model = SentenceTransformer('BAAI/bge-m3')
     return _local_model
+
+
+# TODO: Implement Database Connection Pooling
+# Currently, every DB operation opens and closes a new connection. This is resource-heavy 
+# and will introduce latency, especially during the recursive queries used for LOD context assembly.
+# Refactor get_db_connection() to utilize a connection pool (e.g., psycopg2.pool.SimpleConnectionPool 
+# or ThreadedConnectionPool) to maintain and reuse active connections, significantly improving performance.
