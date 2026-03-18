@@ -1,21 +1,24 @@
 import asyncio
+from datetime import datetime, timezone
+from workers.worker_registry import active_workers
 import uuid
 import os
-import datetime
-from database.db_files_data import get_file_data
-from workers.worker_registry import active_workers
+from datetime import datetime, timezone
 from database.db_attention import (
     create_attention_record,
     get_attention_record,
     search_attentions_db,
     bump_attention,
-    get_attention_context_tree
+    get_attention_context_tree,
+    find_attention_by_focus,
+    update_attention_record,
 )
 
 #########################################
 def create_attention(name: str, required_app: str = None, parent_id: str = None, 
                      tags: list = None, short_summary: str = None, 
-                     detailed_summary: str = None, working_files: list = None) -> dict:
+                     detailed_summary: str = None, working_files: dict = None,
+                     focus: dict = None) -> dict:
     """
     Creates a new Attention node in the database.
     Returns the newly created attention dictionary if successful.
@@ -23,7 +26,9 @@ def create_attention(name: str, required_app: str = None, parent_id: str = None,
     if tags is None:
         tags = []
     if working_files is None:
-        working_files = []
+        working_files = {}
+    if focus is None:
+        focus = {}
         
     attention_id = f"attn_{uuid.uuid4().hex[:8]}" # TBD: not a real unique ID generator, but good enough for now
     
@@ -35,22 +40,9 @@ def create_attention(name: str, required_app: str = None, parent_id: str = None,
         tags=tags,
         short_summary=short_summary,
         detailed_summary=detailed_summary,
-        working_files=working_files
+        working_files=working_files,
+        focus=focus
     )
-    
-    # attentions (
-    #         id VARCHAR(50) PRIMARY KEY,
-    #         parent_id VARCHAR(50) REFERENCES attentions(id) ON DELETE CASCADE,
-    #         name VARCHAR(255) NOT NULL,
-    #         required_app VARCHAR(100),
-    #         tags JSONB DEFAULT '[]'::jsonb,
-    #         status VARCHAR(50) DEFAULT 'ready',
-    #         short_summary TEXT,
-    #         detailed_summary TEXT,
-    #         working_files JSONB DEFAULT '[]'::jsonb,
-    #         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    #         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    # )
     
     if success:
         # Load it right back to get the full record with timestamps
@@ -103,106 +95,143 @@ def get_lod_context(attention_id: str) -> dict:
     return tree
 
 #########################################
-def update_session_attention(session_context: dict, active_file: str = None, context_files: list = None) -> None:
+def update_session_attention(session_context: dict, active_file: str = None, active_segment: str = None, context_files: list = None) -> None:
     """
-    Updates the session's active attention with the current UI and terminal context.
-    Implements a 3-layer caching strategy: Session Cache -> DB Cache -> Fallback to Worker.
+    Updates the session's active attention based on the current UI focus.
+    Evaluates if a context switch is needed based on the file and segment.
     """
-    if active_file and os.path.exists(active_file):
-        active_file = os.path.abspath(active_file)
-    
     if context_files is None:
         context_files = []
         
-    # 1. Ensure active_attention exists in the session_context
-    if "active_attention" not in session_context:
-        from core_utils.attention_ops import create_attention
-        session_context["active_attention"] = create_attention(name="Dynamic UI Attention")
-        
-    active_attention = session_context["active_attention"]
-    
-    # Ensure working_files is a dictionary, not a list
-    if "working_files" not in active_attention or not isinstance(active_attention["working_files"], dict):
-        active_attention["working_files"] = {}
-        
-    working_files = active_attention["working_files"]   
-
-    # 2. Combine files into a unique set to avoid redundant processing
-    files_to_process = set(context_files)
+    # 1. Build the new focus object dynamically
+    new_focus = {}
     if active_file:
-        files_to_process.add(active_file)
-
-    # 3. Process each file using the 3-layer lazy loading logic
-    for file_path in files_to_process:
-        if not os.path.exists(file_path):
-            continue
-
-        try:
-            # Use UTC timestamp to match database format and prevent comparison issues
-            current_mtime_float = os.path.getmtime(file_path)
-            current_mtime = datetime.datetime.fromtimestamp(current_mtime_float, tz=datetime.timezone.utc)
-
-            # --- Layer 1: Session Cache (Short-term memory) ---
-            cached_file = working_files.get(file_path)
-            if cached_file and cached_file.get("status") == "ready" and cached_file.get("last_modified") == current_mtime:
-                # File is already up-to-date in the current session
-                cached_file["is_active"] = (file_path == active_file)
-                continue 
-
-            # --- Layer 2: DB Cache (Long-term memory) ---
-            db_data = get_file_data(file_path)
-            is_fresh_in_db = db_data and db_data.get("file_last_modified") == current_mtime
-
-            if is_fresh_in_db and db_data.get("long_summary"):
-                # Load existing summary from Database
-                working_files[file_path] = {
-                    "path": file_path,
-                    "status": "ready",
-                    "last_modified": current_mtime,
-                    "long_summary": db_data["long_summary"],
-                    "short_summary": db_data.get("short_summary", ""),
-                    "is_active": (file_path == active_file)
-                }
-                continue
-
-            # --- Layer 3: Fallback & Background Worker Dispatch ---
-            # File is new or modified; provide temp lines while worker processes the full summary
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+        # Force absolute path immediately, even if the file is just being created
+        active_file_path = os.path.abspath(active_file) 
+        new_focus["file"] = active_file_path
+        if active_segment:
+            new_focus["segment"] = active_segment # TODO: create properly and not just the incomming text!
             
-            preview = "".join(lines[:20])
-            
-            working_files[file_path] = {
-                "path": file_path,
-                "status": "pending_worker",
-                "last_modified": current_mtime,
-                "long_summary": f"[Temp Preview - Processing Background Summary...]\n{preview}...\n",
-                "short_summary": "Processing...",
-                "is_active": (file_path == active_file)
+    # 2. Ensure active_attention exists in the session_context
+    if "active_attention" not in session_context:
+        # Initial bootstrap for the session
+        session_context["active_attention"] = create_attention(name="Initial UI Attention", focus=new_focus)
+        
+    current_attention = session_context["active_attention"]
+    current_focus = current_attention.get("focus", {})
+    
+    # 3. Clean up and Update working_files (List Comparison Logic)
+    # We work on the dictionary in memory to keep existing data intact
+    if "working_files" not in current_attention or not isinstance(current_attention["working_files"], dict):
+        current_attention["working_files"] = {}
+        
+    working_files = current_attention["working_files"]
+    
+    # Create the target list of absolute paths from the UI
+    ui_paths = {os.path.abspath(f) for f in context_files}
+    if active_file:
+        ui_paths.add(os.path.abspath(active_file))
+
+    # A. Remove files that are no longer in the UI focus
+    paths_to_remove = [p for p in working_files if p not in ui_paths]
+    for p in paths_to_remove:
+        del working_files[p]
+        print(f"[Attention Ops] Removed from session: {p}")
+
+    # B. Add new files that aren't in our memory yet
+    for p in ui_paths:
+        if p not in working_files:
+            # We only add the path and a 'pending' status. 
+            # Another mechanism (Hydrate) will fill this with data if needed.
+            working_files[p] = {
+                "path": p,
+                "status": "new_in_session"
             }
-            
-            # Dispatch summarization task (Fire and Forget)
-            doc_agent = active_workers.get("doc_agent")
-            if doc_agent:
-                # Use the running loop to schedule the async task from a sync function
-                loop = asyncio.get_running_loop()
-                loop.create_task(doc_agent.add_task({"file_path": file_path}))
-
-        except Exception as e:
-            print(f"[Attention Ops Error] Could not process {file_path}: {e}")
+            print(f"[Attention Ops] Added to session: {p}")
+                        
+    # C. Existing files? We don't touch them. Their data (summaries, etc.) stays exactly as is.
+    # TODO somthing is missing, we need to find files data and inject to attention
+    
+    # 4. The Crossroads: Did the focus actually change?
+    if new_focus == current_focus:
+        return
+        
+    print(f"[Attention Ops] Focus shift detected! From {current_focus} to {new_focus}")
+    
+    shift_attention(session_context, new_focus)
+    
+    pass
 
 #########################################
-def shift_attention(session_context: dict, attention_id: str) -> bool:
+def shift_attention(session_context: dict, new_focus: dict) -> bool:
     """
-    Loads an Attention context, stores it in the session, and dynamically mounts its required App.
+    Find or create an attention with the new focus and switch to it in the session context.
     """
-    # 1. Load the attention metadata using the ops module
-    attn_data = load_attention(attention_id)
-    if not attn_data:
-        print(f"[Core Error] Attention ID '{attention_id}' not found.")
-        return False
-        
-    # Store the active attention directly in our session context
-    session_context["active_attention"] = attn_data
+    current_attention = session_context.get("active_attention")
     
-    print(f"\n[Core] Shifting attention to: '{attn_data.get('name')}'")
+    # --- Step A: Save the 'current_attention' to the DB before we lose it ---
+    if current_attention and "id" in current_attention:
+
+        # we update for the worker to have later
+        update_attention_record(
+            current_attention["id"],
+            **current_attention, # This includes all the existing fields
+        )
+
+        # Prepare the exact data structure the worker expects
+        task_data = {
+            "attention_id": current_attention["id"],
+            "session_id": session_context.get("session_id"), # Using .get() just to be safe
+            "timestamp": datetime.now(timezone.utc).isoformat() 
+        }
+
+        # Fetch the worker from the registry and enqueue the task
+        attention_worker = active_workers.get("attention")
+        
+        if attention_worker:
+            try:
+                # Catch the running event loop from the main chat
+                loop = asyncio.get_running_loop()
+                # Fire and forget the task into the background
+                loop.create_task(attention_worker.add_task(task_data))
+                print(f"[Attention] Worker task enqueued successfully for ID: {current_attention['id']}")
+            except RuntimeError:
+                # If for some reason we call this outside the main loop
+                print("[Attention] ERROR: No running event loop found to enqueue task!")
+
+    # --- Step B: Search the DB for an existing attention that has EXACTLY 'new_focus' ---
+    existing_attention = find_attention_by_focus(new_focus)
+
+    # --- Step C: If found -> Load it into session_context["active_attention"] ---
+    if existing_attention:
+        print(f"[Attention Ops] Found existing history for focus: {new_focus}. Switching...")
+        
+        # We already have the full record, no need to fetch it again
+        session_context["active_attention"] = existing_attention
+        
+        # Explicitly bump the timestamp to mark it as the most recently active attention
+        bump_attention(existing_attention["id"])
+        
+    # --- Step D: If not found -> Create a new attention with 'new_focus' ---
+    else:
+        print(f"[Attention Ops] No history for this focus. Creating new attention node...")
+        
+        # Hierarchy: the new attention is a child of the current one (LOD 1 relation)
+        parent_id = current_attention["id"] if current_attention else None
+        
+        # Construct a name based on the focus for clarity
+        file_name = os.path.basename(new_focus.get("file", "Unknown"))
+        segment = new_focus.get("segment", "")
+        attn_name = f"Focus: {segment} in {file_name}" if segment else f"Focus: {file_name}"
+        
+        # We inherit the current tools (paths) to the new attention
+        inherited_files = current_attention.get("working_files", {}) if current_attention else {}
+        
+        session_context["active_attention"] = create_attention(
+            name=attn_name,
+            parent_id=parent_id,
+            focus=new_focus,
+            working_files=inherited_files
+        )
+        
+    return True

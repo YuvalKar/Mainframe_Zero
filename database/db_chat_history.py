@@ -76,23 +76,38 @@ def save_chat_history_turn(session_id: str, user_input: str, actions: list, ai_r
         if conn:
             conn.close()
 
-def get_recent_chat_history(session_id: str, limit: int = 5) -> list:
-    """Retrieves the last N turns for a specific session."""
+##########################
+def get_recent_chat_history(session_id: str, limit: int = 5, timestamp=None) -> list:
+    """Retrieves the last N turns for a specific session, optionally up to a specific timestamp."""
     conn = get_db_connection()
     if not conn:
         return []
         
     try:
         cursor = conn.cursor()
-        # Fetch the latest N records for this session, ordered by newest first
-        select_query = """
+        
+        # Base query and parameters
+        query = """
         SELECT user_input, actions, ai_response
         FROM chat_history
         WHERE session_id = %s
+        """
+        params = [session_id]
+        
+        # Dynamically append the timestamp condition if provided
+        if timestamp:
+            query += " AND created_at <= %s::timestamptz"
+            params.append(timestamp)
+
+        # Append the ordering and limit
+        query += """
         ORDER BY id DESC
         LIMIT %s
         """
-        cursor.execute(select_query, (session_id, limit))
+        params.append(limit)
+        
+        # Execute the dynamically built single query
+        cursor.execute(query, tuple(params))
         rows = cursor.fetchall()
         
         history = []
@@ -111,7 +126,7 @@ def get_recent_chat_history(session_id: str, limit: int = 5) -> list:
         print(f"[Memory DB Error: Failed to fetch history - {e}]")
         return []
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()

@@ -1,0 +1,28 @@
+You are summarizing the current state of a development task.
+
+{% if existing_context %}
+### Previous Context:
+{{ existing_context }}
+{% endif %}
+
+{% if files %}
+### Working Files Context:
+{% for file in files %}
+- {{ file.file_path }} {% if file.section_name %}({{ file.section_name }}){% endif %}: 
+  {{ file.short_summary or file.long_summary or 'No summary available.' }}
+{% endfor %}
+{% endif %}
+
+{% if focus %}
+### Current Focus:
+- File: {{ focus.file_path }} {% if focus.section_name %}({{ focus.section_name }}){% endif %}
+  {{ focus.long_summary or focus.short_summary or 'No summary available.' }}
+{% endif %}
+
+{% if chats %}
+### Recent Chat Interactions (Up to given Timestamp):
+{% for chat in chats %}
+User: {{ chat.user_input }}
+AI: {{ chat.ai_response }}
+{% endfor %}
+{% endif %}

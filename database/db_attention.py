@@ -2,7 +2,6 @@ from database.db_connection import get_db_connection
 import json
 
 ############################## Attention (LOD Hierarchy) DB ##############################
-
 def init_attentions_db():
     """
     Initialize the hierarchical attentions table.
@@ -29,7 +28,7 @@ def init_attentions_db():
             status VARCHAR(50) DEFAULT 'ready',
             short_summary TEXT,
             detailed_summary TEXT,
-            working_files JSONB DEFAULT '[]'::jsonb,
+            working_files JSONB DEFAULT '{}'::jsonb,
             focus JSONB DEFAULT '{}'::jsonb,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -56,11 +55,10 @@ def init_attentions_db():
             conn.close()
 
 #### Attention DB Operations #######
-
 def create_attention_record(attention_id: str, name: str, required_app: str = None, 
                             parent_id: str = None, tags: list = None,
                             short_summary: str = None, detailed_summary: str = None, 
-                            working_files: list = None, focus: dict = None):
+                            working_files: dict = None, focus: dict = None):
     """
     Inserts a new Attention node into the database.
     If parent_id is None, it acts as a root node.
@@ -73,7 +71,7 @@ def create_attention_record(attention_id: str, name: str, required_app: str = No
         cursor = conn.cursor()
         
         tags_json = json.dumps(tags) if tags else '[]'
-        files_json = json.dumps(working_files) if working_files else '[]'
+        files_json = json.dumps(working_files) if working_files else '{}'
         focus_json = json.dumps(focus) if focus else '{}'
         
         insert_query = """
@@ -149,7 +147,7 @@ def get_attention_record(attention_id: str) -> dict:
             conn.close()
 
 
-def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_filter: str = None) -> list:
+def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_filter: str = None, status_filter: str = None) -> list:
     """
     Searches the attentions table based on optional filters.
     """
@@ -168,6 +166,11 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
         """
         params = []
         
+        # Re-added the status filter logic
+        if status_filter:
+            query += " AND status = %s"
+            params.append(status_filter)
+            
         if app_filter:
             query += " AND required_app = %s"
             params.append(app_filter)
@@ -213,7 +216,62 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
         if conn:
             conn.close()
 
+####################################################
+def find_attention_by_focus(focus_dict: dict) -> dict:
+    """
+    Searches for the most recently updated Attention record 
+    that matches the given focus EXACTLY.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+        
+    try:
+        cursor = conn.cursor()
+        
+        # We cast the parameter to jsonb to safely compare it with the focus column
+        query = """
+        SELECT id, parent_id, name, required_app, tags, status, 
+               short_summary, detailed_summary, working_files, focus,
+               created_at, updated_at
+        FROM attentions
+        WHERE focus = %s::jsonb
+        ORDER BY updated_at DESC
+        LIMIT 1
+        """
+        
+        focus_json = json.dumps(focus_dict)
+        cursor.execute(query, (focus_json,))
+        row = cursor.fetchone()
+        
+        if not row:
+            return None
+            
+        return {
+            "id": row[0],
+            "parent_id": row[1],
+            "name": row[2],
+            "required_app": row[3],
+            "tags": row[4],
+            "status": row[5],
+            "short_summary": row[6],
+            "detailed_summary": row[7],
+            "working_files": row[8],
+            "focus": row[9],
+            "created_at": row[10].isoformat() if row[10] else None,
+            "updated_at": row[11].isoformat() if row[11] else None
+        }
+        
+    except Exception as e:
+        print(f"[Memory DB Error: Failed to find attention by focus - {e}]")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
+#######################################################
 def bump_attention(attention_id: str) -> bool:
     """
     Updates the 'updated_at' timestamp of a specific Attention node.
@@ -269,7 +327,7 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
         
     try:
         cursor = conn.cursor()
-        
+
         # Whitelist of allowed columns to prevent SQL injection or accidental typos
         allowed_columns = {
             'name', 'parent_id', 'required_app', 'status', 
@@ -280,13 +338,15 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
         values = []
         
         for key, value in kwargs.items():
+
             if key in allowed_columns:
                 set_clauses.append(f"{key} = %s")
+
                 # Handle JSONB fields gracefully
                 if key in ('tags', 'working_files', 'focus'):
                     # Use empty structures based on the expected type if None is passed
                     if value is None:
-                        val_str = '{}' if key == 'focus' else '[]'
+                        val_str = '[]' if key == 'tags' else '{}'
                     else:
                         val_str = json.dumps(value)
                     values.append(val_str)
