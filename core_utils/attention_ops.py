@@ -163,7 +163,7 @@ def update_session_attention(session_context: dict, active_file: str = None, act
     pass
 
 #########################################
-def shift_attention(session_context: dict, new_focus: dict) -> bool:
+def shift_attention(session_context: dict, new_focus: dict, app_name: str = None) -> bool:
     """
     Find or create an attention with the new focus and switch to it in the session context.
     """
@@ -200,7 +200,7 @@ def shift_attention(session_context: dict, new_focus: dict) -> bool:
                 print("[Attention] ERROR: No running event loop found to enqueue task!")
 
     # --- Step B: Search the DB for an existing attention that has EXACTLY 'new_focus' ---
-    existing_attention = find_attention_by_focus(new_focus)
+    existing_attention = find_attention_by_focus(focus_dict=new_focus, app_name=app_name)
 
     # --- Step C: If found -> Load it into session_context["active_attention"] ---
     if existing_attention:
@@ -218,6 +218,7 @@ def shift_attention(session_context: dict, new_focus: dict) -> bool:
         
         # Hierarchy: the new attention is a child of the current one (LOD 1 relation)
         parent_id = current_attention["id"] if current_attention else None
+        required_app = app_name if app_name else current_attention.get("required_app", None)
         
         # Construct a name based on the focus for clarity
         file_name = os.path.basename(new_focus.get("file", "Unknown"))
@@ -229,6 +230,7 @@ def shift_attention(session_context: dict, new_focus: dict) -> bool:
         
         session_context["active_attention"] = create_attention(
             name=attn_name,
+            required_app=required_app,
             parent_id=parent_id,
             focus=new_focus,
             working_files=inherited_files

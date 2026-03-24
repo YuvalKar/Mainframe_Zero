@@ -1,6 +1,7 @@
 import os
 import ast # <-- Safe parsing library
 import importlib.util
+from core_utils.attention_ops import shift_attention
 
 ################################### 
 def execute_single_action(session_context: dict, action_name: str, action_data: dict) -> str:    
@@ -50,7 +51,12 @@ def execute_direct(action_name: str, action_data: dict, session_context: dict) -
     if (action_name == 'get_API_descriptions'):
         res = get_API_descriptions(**action_data,  session_context=session_context)
         return f"Action '{action_name}': {res}"
-
+    
+    # Only from direct!
+    if (action_name == 'switch_apps'):
+        res = switch_apps(**action_data,  session_context=session_context)
+        return f"Action '{action_name}': {res}"
+    
     target_path = fined_single_action(session_context, action_name)
 
     if not target_path:
@@ -128,6 +134,30 @@ def get_API_descriptions(action_names: list, session_context: dict) -> dict:
         "success": True,
         "message": f"Successfully retrieved API descriptions for {len(descriptions)} actions. You may call them directly using their names.",
         "data": descriptions
+    }
+
+#######################################################
+def switch_apps(app_name: str, session_context: dict) -> dict:
+
+    # Get current attention
+    active_attention = session_context.get("active_attention")
+
+    # Get app from attention, If we are on the requested app already, do nothin
+    if active_attention.get("required_app", None) == app_name:
+        return {"success": True, "message": f"Already on app '{app_name}'.", "data": {}}
+
+    # make sure the app is a valid app and we have the folder for it
+    if not os.path.exists(os.path.join("apps", app_name)):
+        return {"success": False, "message": f"App '{app_name}' not found.", "data": {}}
+
+    # if all is OK Switch attention to new app
+    new_focus = {}
+    shift_attention(session_context, new_focus, app_name=app_name)
+
+    return {
+        "success": True,
+        "message": f"Successfully switched to app '{app_name}'.",
+        "data": {}
     }
 
 #######################################################
