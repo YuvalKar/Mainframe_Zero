@@ -2,12 +2,12 @@
 NAME: skill_save_text_file
 DESCRIPTION: Save a given string of text content to a specified file_path. It acts as a universal utility for persisting generated code, documentation, or any text-based data to the filesystem.
 
-Input Arguments:
+INPUT:
     content (str): The text content string to be saved to the file.
     target_filename (str): The full path and filename where the content should be saved.
                            Example: 'path/to/document.md', 'script.py', or 'data.txt'
 
-Output/Return Value:
+OUTPUT:
     dict: A dictionary containing the status of the operation.
           - 'success' (bool): True if the content was saved successfully, False otherwise.
           - 'message' (str): A descriptive message indicating the outcome, 
