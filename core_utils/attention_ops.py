@@ -115,7 +115,11 @@ def update_session_attention(session_context: dict, active_file: str = None, act
     # 2. Ensure active_attention exists in the session_context
     if "active_attention" not in session_context:
         # Initial bootstrap for the session
-        session_context["active_attention"] = create_attention(name="Initial UI Attention", focus=new_focus)
+        session_context["active_attention"] = create_attention(
+            name="Initial UI Attention", 
+            required_app="mainframe_architect",
+            focus=new_focus
+        )
         
     current_attention = session_context["active_attention"]
     current_focus = current_attention.get("focus", {})

@@ -50,12 +50,12 @@ def execute_direct(action_name: str, action_data: dict, session_context: dict) -
     # SYS action first, as it's a special case that doesn't require searching for a file
     if (action_name == 'get_API_descriptions'):
         res = get_API_descriptions(**action_data,  session_context=session_context)
-        return f"Action '{action_name}': {res}"
+        return res
     
     # Only from direct!
     if (action_name == 'switch_apps'):
         res = switch_apps(**action_data,  session_context=session_context)
-        return f"Action '{action_name}': {res}"
+        return res
     
     target_path = fined_single_action(session_context, action_name)
 

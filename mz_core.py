@@ -33,7 +33,8 @@ from workers.worker_registry import active_workers, worker_tasks
 async def init_workers():
     """
     Initializes all background agents, injects dependencies, and starts their queues.
-    """
+    Ensures that the `active_workers` registry is populated with worker instances.
+    """ 
     print("[Core] Initializing background workers...")
     
     # 1. Initialize the shared summarizer ONCE
@@ -43,7 +44,7 @@ async def init_workers():
     doc_agent = SummarizeDocAgent(summarizer=shared_summarizer)
     attention_worker = AttentionWorker(summarizer=shared_summarizer)
     
-    # 3. Store them globally in the core so other actions can access them later
+    # 3. Store worker instances in the shared active_workers registry
     active_workers["summarizer"] = shared_summarizer
     active_workers["doc_agent"] = doc_agent
     active_workers["attention"] = attention_worker

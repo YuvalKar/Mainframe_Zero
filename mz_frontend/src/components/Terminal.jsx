@@ -24,6 +24,8 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
   const [chatLog, setChatLog] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [installedApps, setInstalledApps] = useState({});
+  const [activeApp, setActiveApp] = useState("");
   
   const messagesEndRef = useRef(null);
 
@@ -36,11 +38,35 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     scrollToBottom();
   }, [chatLog]);
 
+  // Request installed apps on connect
+  useEffect(() => {
+    if (isConnected) {
+      sendCommand({
+        action: "execute",
+        action_name: "sense_get_installed_apps",
+        action_data: {}
+      });
+    }
+  }, [isConnected]);
+
   // Listen to incoming messages from the central App hub
   useEffect(() => {
     if (!latestMessage) return;
 
     // Filter out direct execution results (those belong to the senses, like FileExplorer)
+    // Handle direct result for installed apps
+    if (latestMessage.type === "direct_result" && latestMessage.action_name === "sense_get_installed_apps") {
+      const result = latestMessage.data;
+      if (result.success && result.data) {
+        setInstalledApps(result.data);
+        setActiveApp(prev => prev ? prev : (Object.keys(result.data)[0] || ""));
+      } else {
+        console.error("Failed to get installed apps:", result.message);
+      }
+      return; // Message handled, do not add to chat log
+    }
+
+    // Filter out other direct execution results (those belong to other senses)
     if (latestMessage.type !== "direct_result") {
       setChatLog(prev => [...prev, latestMessage]);
     }
@@ -57,6 +83,27 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         model: newModel
       });
     }
+  };
+
+  const handleAppChange = (e) => {
+    const newApp = e.target.value;
+    setActiveApp(newApp);
+
+    // Send command to backend to switch app context
+    if (isConnected) {
+      sendCommand({
+        action: "execute",
+        action_name: "switch_apps",
+        action_data: {
+          app_name: newApp
+        }
+      });
+    }
+
+    setChatLog(prev => [...prev, { 
+      type: "system", 
+      content: `Active app set to: "${installedApps[newApp]?.name || newApp}"` 
+    }]);
   };
 
   // Send message
@@ -119,6 +166,29 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
               Offline
             </span>
           )}
+          <select
+            value={activeApp}
+            onChange={handleAppChange}
+            disabled={!isConnected || Object.keys(installedApps).length === 0}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "4px",
+              border: "1px solid transparent",
+              backgroundColor: "transparent",
+              color: "var(--text-muted)",
+              fontSize: "0.9em",
+              cursor: isConnected ? "pointer" : "not-allowed",
+              outline: "none",
+              textTransform: 'capitalize'
+            }}
+            onMouseOver={(e) => isConnected && (e.target.style.backgroundColor = "#f1f3f4")}
+            onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+            title="Select Active App"
+          >
+            {Object.keys(installedApps).length === 0 ? (
+              <option value="">Loading apps...</option>
+            ) : (Object.entries(installedApps).map(([appName, appDetails]) => (<option key={appName} value={appName}>{appDetails.name || appName}</option>)))}
+          </select>
           <select 
             value={selectedModel} 
             onChange={handleModelChange}

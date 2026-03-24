@@ -217,7 +217,7 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
             conn.close()
 
 ####################################################
-def find_attention_by_focus(focus_dict: dict, app_filter: str = None) -> dict:
+def find_attention_by_focus(focus_dict: dict, app_name: str = None) -> dict:
     """
     Searches for the most recently updated Attention record 
     that matches the given focus EXACTLY.
@@ -242,7 +242,7 @@ def find_attention_by_focus(focus_dict: dict, app_filter: str = None) -> dict:
         """
         
         focus_json = json.dumps(focus_dict)
-        cursor.execute(query, (focus_json, app_filter))
+        cursor.execute(query, (focus_json, app_name))
         row = cursor.fetchone()
         
         if not row:

@@ -35,12 +35,9 @@ def execute() -> dict:
                 try:
                     with open(settings_path, 'r', encoding='utf-8') as f:
                         apps_data[app_name] = json.load(f)
-                except json.JSONDecodeError:
-                    apps_data[app_name] = {"error": "Failed to decode settings.json."}
                 except Exception:
-                    apps_data[app_name] = {"error": "Failed to read settings.json."}
-            else:
-                apps_data[app_name] = {"error": "settings.json not found."}
+                    # If the file exists but is unreadable or not valid JSON, skip it.
+                    continue
 
         return {
             "success": True,

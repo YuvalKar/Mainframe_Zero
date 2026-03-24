@@ -1,9 +1,10 @@
 import json
 from datetime import datetime
 import os
+from core_utils.attention_ops import create_attention
 
 #########################################
-def init_session(model_name: str = 'gemini-2.5-flash') -> dict:
+def init_session(model_name: str = 'gemini-2.5-flash', required_app: str = 'mainframe_architect') -> dict:
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs(".logs", exist_ok=True)
     
@@ -12,10 +13,16 @@ def init_session(model_name: str = 'gemini-2.5-flash') -> dict:
 
     log_pipeline_step(log_file, "system", f"Session initialized with model '{model_name}'.")
 
+    initial_attention = create_attention(
+        name="Initial Session Attention", 
+        required_app=required_app
+    )
+
     return {
         "session_id": session_id,
         "model_name": model_name,
         "log_file": log_file,
+        "active_attention": initial_attention
     }
 
 #########################################
