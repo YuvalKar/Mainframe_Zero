@@ -12,17 +12,18 @@ Every skill file must start with a comprehensive docstring structured exactly li
 
 ```python
 """
-NAME: <skill_name>
-DESCRIPTION: <A clear, 1-2 sentence description of what this tool achieves. Explain the 'Why'>
+NAME: skill_name_of_the_skill_or_sense (e.g., "sense_weather_report" if the file is sense_weather_report.py)
+DESCRIPTION: A brief, concise description of the skill or sense.
          
-WHEN TO USE: 
-- <Specific scenario 1 where the AI should call this tool>
-- <Specific scenario 2>
-- DO NOT use this when... <optional negative constraint to prevent misuse>
-
+WHEN TO USE:
+- When to use this skill or sense.
+         
 INPUTS:
-- <param_name> (<type>): <Description of the parameter>. Default is <X> if applicable.
-- <param_name> (<type>, optional): <Description>.
-Output/Return Value:
-- description of data returned or NULL
+- param_one (str): The first required parameter.
+- param_two (int, optional): An optional number parameter. Default is 5.
+
+OUTPUT: dict: A dictionary containing the status of the operation, optional - data
+- 'success' (bool): True if the content was saved successfully, False otherwise.
+- 'message' (str): A descriptive message indicating the outcome, including success confirmation or error details.
+- 'data' (dict): the data retrived
 """

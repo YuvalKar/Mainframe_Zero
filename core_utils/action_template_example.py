@@ -1,13 +1,18 @@
 """
-ACTION_TYPE: skill_name_of_the_skill_or_sense (e.g., "sense_weather_report" if the file is sense_weather_report.py)
-PURPOSE: This is a boilerplate template to demonstrate the structure.
+NAME: skill_name_of_the_skill_or_sense (e.g., "sense_weather_report" if the file is sense_weather_report.py)
+DESCRIPTION: A brief, concise description of the skill or sense.
          
-WHEN TO USE: 
+WHEN TO USE:
 - When to use this skill or sense.
          
 INPUTS:
 - param_one (str): The first required parameter.
 - param_two (int, optional): An optional number parameter. Default is 5.
+
+OUTPUT: dict: A dictionary containing the status of the operation, optional - data
+- 'success' (bool): True if the content was saved successfully, False otherwise.
+- 'message' (str): A descriptive message indicating the outcome, including success confirmation or error details.
+- 'data' (dict): the data retrived
 """
 
 def execute(param_one: str, param_two: int = 5) -> dict:
