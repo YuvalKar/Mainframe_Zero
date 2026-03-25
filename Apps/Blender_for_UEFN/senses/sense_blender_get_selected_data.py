@@ -40,9 +40,9 @@ scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\ap
 if scripts_path not in sys.path:
     sys.path.append(scripts_path)
 
-import get_selected_data
-importlib.reload(get_selected_data)
+import blender_get_selected_data
+importlib.reload(blender_get_selected_data)
 
-result = json.dumps(get_selected_data.get_selected_data())
+result = json.dumps(blender_get_selected_data.get_selected_data())
 """
     return blender_bridge.ask_blender(blender_script)
