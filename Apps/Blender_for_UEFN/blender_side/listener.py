@@ -52,12 +52,25 @@ def listen_for_commands():
             script_content = command[len("EXECUTE_CODE:"):].strip()
             
             try:
-                # Execute the raw python string in Blender's current environment
-                exec(script_content)
-                # We can send a silent success back if needed, but for now we just run it
+                # Create a dictionary to catch the variables the script creates
+                local_vars = {}
+                
+                # Execute the code, storing its local variables in our dictionary
+                exec(script_content, globals(), local_vars)
+                
+                # If the script created a variable named 'result', send it back
+                if 'result' in local_vars:
+                    response_data = str(local_vars['result'])
+                    conn.send(response_data.encode('utf-8'))
+                else:
+                    # If it was just an action without return data, send a silent success
+                    conn.send('{"success": true, "message": "Code executed successfully."}'.encode('utf-8'))
+                    
             except Exception as e:
-                # Print the error to Blender's console so we can debug our generated scripts
-                print(f"Error executing raw AI code: {e}")
+                # Print to Blender console AND send the error back to the AI
+                error_msg = f'{{"success": false, "message": "Execution error: {e}"}}'
+                print(error_msg)
+                conn.send(error_msg.encode('utf-8'))   
 
         if command == "GET_LOCATION":
             selected_objs = [o for o in bpy.data.objects if o.select_get()]
