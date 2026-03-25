@@ -22,3 +22,7 @@ env
 
 # attentions - store all attention, tasks,chats, here
 .attentions/
+
+# temp files
+.tmp/
+.tmp/*
