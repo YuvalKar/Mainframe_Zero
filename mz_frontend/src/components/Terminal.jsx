@@ -155,9 +155,7 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         backgroundColor: "var(--bg-main)",
         zIndex: 10
       }}>
-        <h2 style={{ margin: 0, fontSize: "1.1em", fontWeight: "400", color: "var(--text-main)", letterSpacing: "0.5px" }}>
-          Mainframe Zero
-        </h2>
+        <img src="/nBaya_logo.svg" alt="nBaya logo" style={{ height: "24px", margin: 0 }} />
         
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {!isConnected && (
