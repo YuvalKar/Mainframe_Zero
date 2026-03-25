@@ -1,3 +1,4 @@
+# locate at: C:\Users\yuval\AppData\Roaming\Blender Foundation\Blender\5.1\scripts\startup
 import bpy
 import socket
 
