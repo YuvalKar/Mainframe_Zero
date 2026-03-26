@@ -1,4 +1,4 @@
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
 import json
 
 ############################## Attention (LOD Hierarchy) DB ##############################
@@ -52,7 +52,7 @@ def init_attentions_db():
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 #### Attention DB Operations #######
 def create_attention_record(attention_id: str, name: str, required_app: str = None, 
@@ -94,7 +94,7 @@ def create_attention_record(attention_id: str, name: str, required_app: str = No
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 
 def get_attention_record(attention_id: str) -> dict:
@@ -144,7 +144,7 @@ def get_attention_record(attention_id: str) -> dict:
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 
 def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_filter: str = None, status_filter: str = None) -> list:
@@ -214,7 +214,7 @@ def search_attentions_db(app_filter: str = None, tag_filter: str = None, name_fi
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ####################################################
 def find_attention_by_focus(focus_dict: dict, app_name: str = None) -> dict:
@@ -270,7 +270,7 @@ def find_attention_by_focus(focus_dict: dict, app_name: str = None) -> dict:
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 #######################################################
 def bump_attention(attention_id: str) -> bool:
@@ -308,7 +308,7 @@ def bump_attention(attention_id: str) -> bool:
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 def update_attention_record(attention_id: str, **kwargs) -> bool:
     """
@@ -385,7 +385,7 @@ def update_attention_record(attention_id: str, **kwargs) -> bool:
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 def get_attention_context_tree(attention_id: str) -> dict:
     """
@@ -486,7 +486,7 @@ def get_attention_context_tree(attention_id: str) -> dict:
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
             
 ##################################
 if __name__ == "__main__":

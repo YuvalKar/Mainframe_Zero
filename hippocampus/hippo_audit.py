@@ -14,7 +14,8 @@ INPUTS:
 """
 
 import json
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
+
 
 def execute(filter_dict: dict, limit: int = 10) -> dict:
     # We need something to filter by, or at least a conscious decision to pull all
@@ -46,7 +47,7 @@ def execute(filter_dict: dict, limit: int = 10) -> dict:
         results = cursor.fetchall()
         
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         # Format the output gracefully
         memories = []

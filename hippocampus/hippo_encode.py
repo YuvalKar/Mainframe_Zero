@@ -16,7 +16,7 @@ INPUTS:
 """
 
 import json
-from database.db_connection import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, release_db_connection, get_local_model
 
 def execute(content: str, metadata: dict = None) -> dict:
     # Ensure there is content to save
@@ -50,7 +50,7 @@ def execute(content: str, metadata: dict = None) -> dict:
         conn.commit()
         
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         return {
             "success": True, 

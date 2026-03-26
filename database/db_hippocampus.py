@@ -1,4 +1,4 @@
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
 
 
 ############################## Hippocampus Database Initialization Script ##############################
@@ -41,4 +41,4 @@ def init_hippocampus_db():
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)

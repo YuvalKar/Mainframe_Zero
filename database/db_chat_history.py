@@ -1,4 +1,4 @@
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
 import json
 
 ############################## Short-Term Memory (chat History) ##############################
@@ -47,7 +47,7 @@ def init_chat_history_db():
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 def save_chat_history_turn(session_id: str, user_input: str, actions: list, ai_response: str):
     """Saves a single conversation turn and its actions to the database."""
@@ -74,7 +74,7 @@ def save_chat_history_turn(session_id: str, user_input: str, actions: list, ai_r
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ##########################
 def get_recent_chat_history(session_id: str, limit: int = 5, timestamp=None) -> list:
@@ -129,4 +129,4 @@ def get_recent_chat_history(session_id: str, limit: int = 5, timestamp=None) -> 
         if 'cursor' in locals() and cursor:
             cursor.close()
         if 'conn' in locals() and conn:
-            conn.close()
+            release_db_connection(conn)

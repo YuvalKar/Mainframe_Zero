@@ -14,7 +14,8 @@ OUTPUTS:
 - data (dict, optional): If successful, a structured dictionary containing the database schema information, including table names, column names, and data types. If the operation fails, this field may be omitted or set to None.
 """
 
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
+
 
 def execute() -> dict:
     # 1. Establish connection using the existing utility
@@ -46,7 +47,7 @@ def execute() -> dict:
             })
             
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
         
         return {
             "success": True,

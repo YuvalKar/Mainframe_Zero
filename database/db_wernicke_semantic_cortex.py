@@ -1,4 +1,5 @@
-from database.db_connection import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, release_db_connection, get_local_model
+import json
 
 ############################## Wernicke Semantic Cortex Database Initialization Script ##############################
 def init_wernicke_semantic_cortex_db():
@@ -52,13 +53,10 @@ def init_wernicke_semantic_cortex_db():
         if 'cursor' in locals() and cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ######################################################
-import json
-from database.db_connection import get_db_connection, get_local_model
-
-def inject_to_cortex(parsed_items: list, semantic: str = "Blender") -> dict:
+def inject_to_semantic_cortex(parsed_items: list, semantic: str = "Blender") -> dict:
     """
     Batch encoder for Wernicke Semantic Cortex.
     Injects prepared dictionaries into the PostgreSQL database.
@@ -91,6 +89,8 @@ def inject_to_cortex(parsed_items: list, semantic: str = "Blender") -> dict:
             # Generate embedding
             embedding_array = model.encode(md_content)
             embedding = embedding_array.tolist()
+
+            #### TODO: make sure we do not index twice the same object!!!! do upsert!
             
             # Insert query matching the new schema
             insert_query = """
@@ -106,7 +106,7 @@ def inject_to_cortex(parsed_items: list, semantic: str = "Blender") -> dict:
 
         conn.commit()
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         return {
             "success": True, 
@@ -116,8 +116,85 @@ def inject_to_cortex(parsed_items: list, semantic: str = "Blender") -> dict:
     except Exception as e:
         return {"success": False, "message": f"Failed to encode documentation: {str(e)}"}
 
+#########################################################################################
+def query_semantic_cortex(user_query: str, semantic: str, limit: int = 3) -> list:
+    """
+    Search the Wernicke Semantic Cortex for the most relevant documentation
+    based on a free-text user query.
+    """
+    if not user_query:
+        print("[Error: Empty query provided.]")
+        return []
 
+    try:
+        # 1. Load the model and embed the user's free-text query
+        model = get_local_model()
+        query_embedding = model.encode(user_query).tolist()
+
+        # 2. Connect to the database
+        conn = get_db_connection()
+        if not conn:
+            print("[Error: Failed to connect to Wernicke DB.]")
+            return []
+
+        cursor = conn.cursor()
+
+        # 3. Perform Vector Similarity Search using pgvector's cosine distance operator (<=>)
+        # We filter by 'semantic' first to ensure we only search within the correct software context.
+        search_query = """
+            SELECT element_path, element_type, content_markdown,
+                   1 - (embedding <=> %s::vector) AS similarity_score
+            FROM wernicke_semantic_cortex
+            WHERE semantic = %s
+            ORDER BY embedding <=> %s::vector
+            LIMIT %s;
+        """
+        
+        # We pass the embedding twice (once for the SELECT score, once for the ORDER BY)
+        cursor.execute(search_query, (query_embedding, semantic, query_embedding, limit))
+        
+        results = cursor.fetchall()
+        
+        # 4. Package the results nicely
+        formatted_results = []
+        for row in results:
+            formatted_results.append({
+                'element_path': row[0],
+                'element_type': row[1],
+                'content': row[2],
+                'score': round(row[3], 4) # Round the similarity score for readability
+            })
+
+        cursor.close()
+        release_db_connection(conn)
+
+        return formatted_results
+
+    except Exception as e:
+        print(f"[Error: Failed to query the cortex - {str(e)}]")
+        return []
+
+# ---------------------------------------------------------
+# Execution block - Let's test our brain!
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    # Run this once to create the new table with updated_at
-    # init_wernicke_semantic_cortex_db()
-    pass
+    # Let's ask a natural language question about our Strip
+    test_question = "How do I cut a video strip into two separate parts?"
+    software_context = "blender"
+    
+    print(f"\n[System: Asking Wernicke...] '{test_question}'")
+    
+    # We ask for the top 2 most relevant results
+    answers = query_semantic_cortex(test_question, semantic=software_context, limit=2)
+    
+    print("-" * 60)
+    for i, ans in enumerate(answers, 1):
+        print(f"Result #{i} | Match Score: {ans['score']}")
+        print(f"Path: {ans['element_path']} ({ans['element_type']})")
+        print(f"Content Preview: {ans['content'][:150]}...\n")
+        print("-" * 60)
+
+# if __name__ == "__main__":
+#     # Run this once to create the new table with updated_at
+#     # init_wernicke_semantic_cortex_db()
+#     pass

@@ -19,7 +19,7 @@ INPUTS:
 """
 
 import json
-from database.db_connection import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, release_db_connection, get_local_model
 
 def execute(query: str, limit: int = 3, filter_dict: dict = None) -> dict:
     # Ensure there is a query to search for
@@ -64,7 +64,7 @@ def execute(query: str, limit: int = 3, filter_dict: dict = None) -> dict:
         results = cursor.fetchall()
         
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         # 4. Format the results
         memories = []

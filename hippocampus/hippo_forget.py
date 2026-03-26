@@ -12,7 +12,8 @@ INPUTS:
 - memory_id (int): The unique ID of the memory you want to delete.
 """
 
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
+
 
 def execute(memory_id: int) -> dict:
     # Ensure a valid memory ID is provided
@@ -36,7 +37,7 @@ def execute(memory_id: int) -> dict:
         conn.commit()
         
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         # Return appropriate message based on whether the row existed
         if deleted_count > 0:

@@ -1,4 +1,4 @@
-from database.db_connection import get_db_connection
+from database.db_connection import get_db_connection, release_db_connection
 import json
 
 ############################## Files Metadata ##############################
@@ -53,7 +53,7 @@ def init_files_data_db():
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 #################################
 def upsert_file_data(file_path: str, section_name: str = "", parent_id: int = None,
@@ -100,7 +100,7 @@ def upsert_file_data(file_path: str, section_name: str = "", parent_id: int = No
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ##########################################
 def get_file_data(file_path: str, section_name: str = ""):
@@ -138,7 +138,7 @@ def get_file_data(file_path: str, section_name: str = ""):
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ################################################################
 def search_files_by_tag(tag: str):
@@ -171,7 +171,7 @@ def search_files_by_tag(tag: str):
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
 
 ##################################################
 def delete_file_data(file_path: str):
@@ -198,7 +198,7 @@ def delete_file_data(file_path: str):
         if cursor:
             cursor.close()
         if conn:
-            conn.close()
+            release_db_connection(conn)
             
 
 ##################################

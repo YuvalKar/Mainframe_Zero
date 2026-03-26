@@ -14,7 +14,7 @@ INPUTS:
 """
 
 import json
-from database.db_connection import get_db_connection, get_local_model
+from database.db_connection import get_db_connection, release_db_connection, get_local_model
 
 def execute(memory_id: int, new_content: str, new_metadata: dict = None) -> dict:
     # Ensure we have both an ID and new content to update
@@ -51,7 +51,7 @@ def execute(memory_id: int, new_content: str, new_metadata: dict = None) -> dict
         conn.commit()
         
         cursor.close()
-        conn.close()
+        release_db_connection(conn)
 
         if updated_count > 0:
             return {
