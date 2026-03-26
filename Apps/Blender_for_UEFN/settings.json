@@ -1,4 +1,7 @@
 {
-    "description": "An app for integrating with Blender and Unreal Engine for Fortnite (UEFN).",
+    "display_name": "Blender",
+    "description": "An app for integrating with Blender.",
+    "icon": "",
+    "semantic": ["blender"],
     "version": "0.1.0"
 }

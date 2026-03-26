@@ -1,4 +1,5 @@
 {
-    "description": "An app for designing and managing the Mainframe Zero system architecture.",
+    "display_name": "nBaya",
+    "description": "An app for designing and managing the nBaya system architecture.",
     "version": "0.0.0"
 }
