@@ -26,3 +26,7 @@ env
 # temp files
 .tmp/
 .tmp/*
+
+#Language semantic sources
+.semantic
+.semantic/
