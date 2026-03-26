@@ -52,14 +52,15 @@ def format_to_markdown(item):
         
     return md.strip()
 
+##############################################################
 def parse_blender_doctree(file_path):
     """
-    Parse a Sphinx doctree file by looking ONLY at direct children to avoid
-    overwriting parent data with nested attribute/method data.
+    Parse a Sphinx doctree file. Handles both standard API classes/methods
+    and Enum value lists based on the node structure.
     """
     file_stem = Path(file_path).name.replace('.doctree', '')
     
-    # Pre-build our main class container
+    # Pre-build our main class container for standard API files
     main_class = {
         'type': 'class',
         'name': file_stem,
@@ -77,107 +78,138 @@ def parse_blender_doctree(file_path):
         with open(file_path, 'rb') as f:
             document = pickle.load(f)
             
-        print(f"[System: Parsing {file_path} with strict child isolation...]")
-
-        for node in document.findall(addnodes.desc):
-            obj_type = node.attributes.get('objtype', 'unknown')
-
-            # 1. Parse Signature (STRICTLY direct children only)
-            signatures = [child for child in node.children if isinstance(child, addnodes.desc_signature)]
-            if not signatures:
-                continue
-            
-            # Take only the first immediate signature node
-            primary_sig = signatures[0]
-            item_signature = primary_sig.astext().replace('\n', ' ')
-            
-            item_name = ""
-            for name_node in primary_sig.findall(addnodes.desc_name):
-                item_name += name_node.astext()
-            
-            # Fallback if name is empty
-            if not item_name:
-                item_name = item_signature.split('(')[0].strip()
-
-            # 2. Parse Content (STRICTLY direct children only)
-            contents = [child for child in node.children if isinstance(child, addnodes.desc_content)]
-            item_description_parts = []
-            item_parameters = []
-            item_returns = ''
-            item_return_type = ''
-            
-            if contents:
-                content_node = contents[0]
-                # Look only at the immediate paragraphs/lists of this specific content block
-                for element in content_node.children:
-                    if isinstance(element, nodes.paragraph):
-                        item_description_parts.append(element.astext().replace('\n', ' '))
-                    elif isinstance(element, nodes.field_list):
-                        for field in element.findall(nodes.field):
-                            field_name = field[0].astext().lower() 
-                            field_body = field[1].astext().replace('\n', ' ')
-
-                            if 'parameter' in field_name or 'param' in field_name:
-                                item_parameters.append(field_body)
-                            elif 'return type' in field_name or 'rtype' in field_name:
-                                item_return_type = field_body
-                            elif 'return' in field_name:
-                                item_returns = field_body
-
-            item_description = ' '.join(item_description_parts)
-
-            # Build the atomic item data
-            item_data = {
-                'type': obj_type,
-                'name': item_name,
-                'signature': item_signature,
-                'description': item_description,
-                'parameters': item_parameters,
-                'returns': item_returns,
-                'return_type': item_return_type
-            }
-
-            # 3. ROUTING
-            if obj_type == 'class' and not main_class['description']:
-                # We found the main class definition. Lock it in.
-                main_class['signature'] = item_data['signature']
-                main_class['description'] = item_data['description']
-                
-            elif obj_type in ['attribute', 'data', 'property']:
-                # Attributes go directly into the main class container
-                main_class['attributes'].append(item_data)
-                
-            elif obj_type in ['method', 'classmethod', 'staticmethod']:
-                # Methods get their own independent record with the fully qualified name
-                clean_name = item_data['name'].split('.')[-1]
-                item_data['name'] = f"{file_stem}.{clean_name}"
-                extracted_methods.append(item_data)
-
-        # Final assembly: Exactly 1 Main Class + N independent Methods
-        final_items = [main_class] + extracted_methods
+        # Check if it's a standard API file (contains addnodes.desc)
+        desc_nodes = list(document.findall(addnodes.desc))
         
-        # Package for the Database Injector
-        db_ready_data = []
-        for item in final_items:
-            md_content = format_to_markdown(item)
-            db_ready_data.append({
-                'element_path': item['name'],
-                'element_type': item['type'],
-                'content_markdown': md_content,
-                'metadata': {
-                    'language': 'Python',
-                    'module': file_stem.rsplit('.', 1)[0] # e.g., 'bpy.types'
-                }
-            })
+        if desc_nodes:
+            print(f"[System: Parsing {file_path} as standard API...]")
+            
+            for node in desc_nodes:
+                obj_type = node.attributes.get('objtype', 'unknown')
 
-        return db_ready_data
+                # 1. Parse Signature (STRICTLY direct children only)
+                signatures = [child for child in node.children if isinstance(child, addnodes.desc_signature)]
+                if not signatures:
+                    continue
+                
+                primary_sig = signatures[0]
+                item_signature = primary_sig.astext().replace('\n', ' ')
+                
+                item_name = ""
+                for name_node in primary_sig.findall(addnodes.desc_name):
+                    item_name += name_node.astext()
+                
+                if not item_name:
+                    item_name = item_signature.split('(')[0].strip()
+
+                # 2. Parse Content (STRICTLY direct children only)
+                contents = [child for child in node.children if isinstance(child, addnodes.desc_content)]
+                item_description_parts = []
+                item_parameters = []
+                item_returns = ''
+                item_return_type = ''
+                
+                if contents:
+                    content_node = contents[0]
+                    for element in content_node.children:
+                        if isinstance(element, nodes.paragraph):
+                            item_description_parts.append(element.astext().replace('\n', ' '))
+                        elif isinstance(element, nodes.field_list):
+                            for field in element.findall(nodes.field):
+                                field_name = field[0].astext().lower() 
+                                field_body = field[1].astext().replace('\n', ' ')
+
+                                if 'parameter' in field_name or 'param' in field_name:
+                                    item_parameters.append(field_body)
+                                elif 'return type' in field_name or 'rtype' in field_name:
+                                    item_return_type = field_body
+                                elif 'return' in field_name:
+                                    item_returns = field_body
+
+                item_description = ' '.join(item_description_parts)
+
+                item_data = {
+                    'type': obj_type,
+                    'name': item_name,
+                    'signature': item_signature,
+                    'description': item_description,
+                    'parameters': item_parameters,
+                    'returns': item_returns,
+                    'return_type': item_return_type
+                }
+
+                # 3. ROUTING
+                if obj_type == 'class' and not main_class['description']:
+                    main_class['signature'] = item_data['signature']
+                    main_class['description'] = item_data['description']
+                    
+                elif obj_type in ['attribute', 'data', 'property']:
+                    main_class['attributes'].append(item_data)
+                    
+                elif obj_type in ['method', 'classmethod', 'staticmethod']:
+                    clean_name = item_data['name'].split('.')[-1]
+                    item_data['name'] = f"{file_stem}.{clean_name}"
+                    extracted_methods.append(item_data)
+
+            final_items = [main_class] + extracted_methods
+            
+            db_ready_data = []
+            for item in final_items:
+                md_content = format_to_markdown(item)
+                db_ready_data.append({
+                    'element_path': item['name'],
+                    'element_type': item['type'],
+                    'content_markdown': md_content,
+                    'metadata': {
+                        'language': 'Python',
+                        'module': file_stem.rsplit('.', 1)[0]
+                    }
+                })
+
+            return db_ready_data
+
+        else:
+            # Fallback: Check if it's an Enum file (contains field_lists)
+            field_lists = list(document.findall(nodes.field_list))
+            if field_lists:
+                print(f"[System: Parsing {file_path} as Enum/Constants...]")
+                
+                # Try to get the section title
+                title = file_stem
+                for title_node in document.findall(nodes.title):
+                    title = title_node.astext()
+                    break
+                    
+                enum_values = []
+                for field_list in field_lists:
+                    for field in field_list.findall(nodes.field):
+                        field_name = field[0].astext()
+                        field_body = field[1].astext().replace('\n', ' ')
+                        enum_values.append(f"- **`{field_name}`**: {field_body}")
+                        
+                if enum_values:
+                    # Construct a custom markdown for Enums
+                    md_content = f"### `{file_stem}`\n\n**Type:** Enum\n**Summary:** {title}\n\n**Values:**\n" + "\n".join(enum_values)
+                    
+                    return [{
+                        'element_path': file_stem,
+                        'element_type': 'enum',
+                        'content_markdown': md_content,
+                        'metadata': {
+                            'language': 'Python',
+                            'module': 'bpy.types.enum'
+                        }
+                    }]
+            
+        # If neither standard API nor Enum, return empty
+        return []
 
     except Exception as e:
         print(f"[Error: Failed to extract data - {e}]")
         return []
 
 # ---------------------------------------------------------
-# Execution block - Batch processing all .doctree files
+# Execution block - Batch processing all .doctree files 
 # ---------------------------------------------------------
 if __name__ == "__main__":
     
@@ -192,7 +224,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Gather all doctree files in the folder
-    doctree_files = list(semantic_dir.glob("*.doctree"))
+    doctree_files = list(semantic_dir.rglob("*.doctree"))
     total_files = len(doctree_files)
     
     if total_files == 0:

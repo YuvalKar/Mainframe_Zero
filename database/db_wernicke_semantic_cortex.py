@@ -18,18 +18,21 @@ def init_wernicke_semantic_cortex_db():
         cursor.execute("DROP TABLE IF EXISTS wernicke_semantic_cortex;")
         print("[System: Existing 'wernicke_semantic_cortex' table dropped (if it existed).]")
         
-        # Create the memory table
+        # Create the memory table with the UNIQUE constraint for upserts
         # Note: Using 1024 dimensions to match the hippocampus DB (e.g., for BAAI/bge-m3)
         create_table_query = """
         CREATE TABLE wernicke_semantic_cortex (
             id SERIAL PRIMARY KEY,
-            semantic VARCHAR(50) NOT NULL,      -- e.g., 'Blender', 'UEFN', 'Verse'
+            semantic VARCHAR(50) NOT NULL,      -- e.g., 'blender', 'uefn', 'verse'
             element_path VARCHAR(255) NOT NULL, -- e.g., 'bpy.types.Strip.split'
             element_type VARCHAR(50) NOT NULL,  -- e.g., 'class', 'method', 'property'
             content_markdown TEXT NOT NULL,
             metadata JSONB,                     -- e.g., {"language": "Python", "module": "bpy.types"}
             embedding vector(1024),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            
+            -- Ensure we never inject the same element path twice for the same software
+            CONSTRAINT unique_semantic_element UNIQUE (semantic, element_path)
         );
         """
         cursor.execute(create_table_query)
@@ -90,14 +93,20 @@ def inject_to_semantic_cortex(parsed_items: list, semantic: str = "Blender") -> 
             embedding_array = model.encode(md_content)
             embedding = embedding_array.tolist()
 
-            #### TODO: make sure we do not index twice the same object!!!! do upsert!
-            
-            # Insert query matching the new schema
+            # Insert query with UPSERT logic (Insert or Update if exists)
             insert_query = """
                 INSERT INTO wernicke_semantic_cortex 
                 (semantic, element_path, element_type, content_markdown, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s::vector)
+                ON CONFLICT (semantic, element_path) 
+                DO UPDATE SET 
+                    element_type = EXCLUDED.element_type,
+                    content_markdown = EXCLUDED.content_markdown,
+                    metadata = EXCLUDED.metadata,
+                    embedding = EXCLUDED.embedding,
+                    created_at = CURRENT_TIMESTAMP
             """
+
             cursor.execute(insert_query, (semantic, element_path, element_type, md_content, meta_json, embedding))
             
             # Print progress
@@ -177,22 +186,22 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 3) -> lis
 # ---------------------------------------------------------
 # Execution block - Let's test our brain!
 # ---------------------------------------------------------
-if __name__ == "__main__":
-    # Let's ask a natural language question about our Strip
-    test_question = "How do I cut a video strip into two separate parts?"
-    software_context = "blender"
+# if __name__ == "__main__":
+#     # Let's ask a natural language question about our Strip
+#     test_question = "How do I cut a video strip into two separate parts?"
+#     software_context = "blender"
     
-    print(f"\n[System: Asking Wernicke...] '{test_question}'")
+#     print(f"\n[System: Asking Wernicke...] '{test_question}'")
     
-    # We ask for the top 2 most relevant results
-    answers = query_semantic_cortex(test_question, semantic=software_context, limit=2)
+#     # We ask for the top 2 most relevant results
+#     answers = query_semantic_cortex(test_question, semantic=software_context, limit=2)
     
-    print("-" * 60)
-    for i, ans in enumerate(answers, 1):
-        print(f"Result #{i} | Match Score: {ans['score']}")
-        print(f"Path: {ans['element_path']} ({ans['element_type']})")
-        print(f"Content Preview: {ans['content'][:150]}...\n")
-        print("-" * 60)
+#     print("-" * 60)
+#     for i, ans in enumerate(answers, 1):
+#         print(f"Result #{i} | Match Score: {ans['score']}")
+#         print(f"Path: {ans['element_path']} ({ans['element_type']})")
+#         print(f"Content Preview: {ans['content'][:150]}...\n")
+#         print("-" * 60)
 
 # if __name__ == "__main__":
 #     # Run this once to create the new table with updated_at
