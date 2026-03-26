@@ -126,10 +126,10 @@ def inject_to_semantic_cortex(parsed_items: list, semantic: str = "Blender") -> 
         return {"success": False, "message": f"Failed to encode documentation: {str(e)}"}
 
 #########################################################################################
-def query_semantic_cortex(user_query: str, semantic: str, limit: int = 3) -> list:
+def query_semantic_cortex(user_query: str, semantic: str, limit: int = 5, max_chars: int = 6000) -> list:
     """
-    Search the Wernicke Semantic Cortex for the most relevant documentation
-    based on a free-text user query.
+    Search the Wernicke Semantic Cortex for the most relevant documentation.
+    Limits the total output size to avoid overloading the AI context window.
     """
     if not user_query:
         print("[Error: Empty query provided.]")
@@ -148,8 +148,7 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 3) -> lis
 
         cursor = conn.cursor()
 
-        # 3. Perform Vector Similarity Search using pgvector's cosine distance operator (<=>)
-        # We filter by 'semantic' first to ensure we only search within the correct software context.
+        # 3. Perform Vector Similarity Search
         search_query = """
             SELECT element_path, element_type, content_markdown,
                    1 - (embedding <=> %s::vector) AS similarity_score
@@ -159,20 +158,30 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 3) -> lis
             LIMIT %s;
         """
         
-        # We pass the embedding twice (once for the SELECT score, once for the ORDER BY)
         cursor.execute(search_query, (query_embedding, semantic, query_embedding, limit))
-        
         results = cursor.fetchall()
         
-        # 4. Package the results nicely
+        # 4. Package the results nicely with a hard limit on total characters
         formatted_results = []
+        current_char_count = 0
+        
         for row in results:
+            content_text = row[2]
+            content_length = len(content_text)
+            
+            # Stop if adding this exact chunk pushes us over the maximum allowed size
+            if current_char_count + content_length > max_chars:
+                print(f"[System: Context size limit reached. Stopped at {len(formatted_results)} results.]")
+                break
+                
             formatted_results.append({
                 'element_path': row[0],
                 'element_type': row[1],
-                'content': row[2],
-                'score': round(row[3], 4) # Round the similarity score for readability
+                'content': content_text,
+                'score': round(row[3], 4)
             })
+            
+            current_char_count += content_length
 
         cursor.close()
         release_db_connection(conn)
