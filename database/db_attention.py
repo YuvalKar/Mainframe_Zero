@@ -236,7 +236,7 @@ def find_attention_by_focus(focus_dict: dict, app_name: str = None) -> dict:
                created_at, updated_at
         FROM attentions
         WHERE focus = %s::jsonb
-        AND required_app = %s"
+        AND required_app = %s
         ORDER BY updated_at DESC
         LIMIT 1
         """
