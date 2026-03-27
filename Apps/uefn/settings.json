@@ -1,0 +1,7 @@
+{
+    "display_name": "UEFN",
+    "description": "An app for integrating with UEFN Editor.",
+    "icon": "",
+    "semantic": ["unreal"],
+    "version": "0.0.0"
+}
