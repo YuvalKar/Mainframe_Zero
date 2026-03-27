@@ -38,6 +38,7 @@ def _parse_mzignore(root_path: str) -> list:
                     if line and not line.startswith('#'):
                         ignore_patterns.append(line)
         except Exception:
+            print('cant load .mzignore')
             pass # Silently fail and use defaults if we can't read the ignore file
             
     return ignore_patterns

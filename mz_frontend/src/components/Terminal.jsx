@@ -59,7 +59,7 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       const result = latestMessage.data;
       if (result.success && result.data) {
         setInstalledApps(result.data);
-        setActiveApp(prev => prev ? prev : (Object.keys(result.data)[0] || ""));
+        setActiveApp(prev => prev ? prev : (Object.keys(result.data)[0] || "")); // TODO: set a way to find the main up!!!
       } else {
         console.error("Failed to get installed apps:", result.message);
       }
@@ -163,7 +163,14 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
               <span style={{ display: "inline-block", width: "8px", height: "8px", backgroundColor: "#d93025", borderRadius: "50%" }}></span>
               Offline
             </span>
-          )}
+             )}
+            
+            {activeApp && installedApps[activeApp] && installedApps[activeApp].icon &&(
+              <img
+                src={installedApps[activeApp].icon}
+                alt={`${installedApps[activeApp].display_name} Logo`}
+                style={{ height: "24px", marginRight: "10px" }} // Adjust height as needed
+              /> )}
           <select
             value={activeApp}
             onChange={handleAppChange}
@@ -181,11 +188,11 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
             }}
             onMouseOver={(e) => isConnected && (e.target.style.backgroundColor = "#f1f3f4")}
             onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
-            title="Select Active App"
+           title="Select Active App"
           >
             {Object.keys(installedApps).length === 0 ? (
               <option value="">Loading apps...</option>
-            ) : (Object.entries(installedApps).map(([appName, appDetails]) => (<option key={appName} value={appName}>{appDetails.name || appName}</option>)))}
+            ) : (Object.entries(installedApps).map(([appName, appDetails]) => (<option key={appName} value={appName}>{appDetails.display_name || appName}</option>)))}
           </select>
           <select 
             value={selectedModel} 
