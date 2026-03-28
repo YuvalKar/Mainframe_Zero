@@ -13,6 +13,7 @@ from core_utils import actions_ops
 # Global variable to hold our active chat session
 mz_chat_session = None
 
+from llm_router import get_available_models
 
 # ==========================================
 # ACTION HANDLERS
@@ -46,19 +47,30 @@ async def handle_chat(payload: dict, websocket: WebSocket, stream_callback):
 
 async def handle_change_model(payload: dict, websocket: WebSocket, stream_callback):
     """
-    Handles switching the AI model and resetting the chat session.
+    Handles switching the AI model for the current session.
     """
     global mz_chat_session
-    new_model = payload.get("model", "gemini-2.5-flash") # Fallback to flash
+
+    available_models = get_available_models()
+
+    if payload.get("model") not in available_models:
+        await stream_callback({
+            "type": "error",
+            "content": f"System Error: Invalid Model"
+            })
+        return
+
+    new_model = payload.get("model", list(available_models.keys())[0]) # Fallback to first in list
     print(f"[Server] Switching model to: {new_model}")
     
-    # YUVAL CHNGE - we will not init session on chanege of models
-    # mz_chat_session = session_manager.init_session(new_model)
+    # Update the model name in the current session context
+    if mz_chat_session:
+        mz_chat_session["model_name"] = new_model
     
     # Notify the frontend that the switch was successful
     await stream_callback({
         "type": "system", 
-        "content": f"System: Successfully switched model to {new_model} and restarted session."
+        "content": f"System: Successfully switched model to {new_model}."
     })
 
 # Add this new function below handle_change_model

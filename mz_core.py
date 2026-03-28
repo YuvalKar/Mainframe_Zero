@@ -1,14 +1,12 @@
 import json
 import asyncio
-from google import genai
-from google.genai import types
+
 from dotenv import load_dotenv
 
 # Import utility functions
 from core_utils.context_builder import get_system_prompt
 from core_utils.actions_ops import execute_single_action
 from core_utils.session_manager import log_pipeline_step
-
 
 # Import memory DB functions for short-term history
 from database.db_chat_history import save_chat_history_turn
@@ -21,8 +19,7 @@ from workers.attention_worker import AttentionWorker
 # Load environment variables where the core actually needs them
 load_dotenv()
 
-# We can keep a single client instance for the core to use
-_client = genai.Client()
+from llm_router import generate_ai_response
 
 # ==========================================
 # BACKGROUND WORKERS INITIALIZATION
@@ -63,7 +60,6 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
     It receives the session context (where to log, what model to use) and the prompt.
     """
     # Extract session variables
-    model_name = session_context.get("model_name", "gemini-2.5-flash")
     log_file = session_context.get("log_file")
     system_rules = get_system_prompt()
     
@@ -92,28 +88,23 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
         try:
             log_pipeline_step(log_file, "backend_api_request", {"loop": loop_counter, "prompt": current_prompt})
 
-            def _call_gemini():
-                return _client.models.generate_content(
-                    model=model_name,
-                    contents=current_prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_rules,
-                        temperature=0.1,
-                        response_mime_type="application/json",
-                    )
-                )
-
-            response = await asyncio.to_thread(_call_gemini)
+            # Call the new unified LLM router
+            ai_response_text = await generate_ai_response(
+                session_context=session_context, 
+                prompt=current_prompt, 
+                system_rules=system_rules
+            )
 
             # --- NEW SAFETY CHECK ---
-            if not response or not response.text:
+            if not ai_response_text:
                 await log_and_emit("error", "Received an empty response from the AI engine.")
-                log_pipeline_step(log_file, "backend_error", "response.text was empty or None.")
+                log_pipeline_step(log_file, "backend_error", "ai_response_text was empty or None.")
                 break
 
-            log_pipeline_step(log_file, "backend_api_response_raw", {"loop": loop_counter, "raw_text": response.text})
+            log_pipeline_step(log_file, "backend_api_response_raw", {"loop": loop_counter, "raw_text": ai_response_text})
 
-            ai_data = json.loads(response.text)
+            # Parse the string returned by the router into a dictionary
+            ai_data = json.loads(ai_response_text)
             
             thought = ai_data.get("thought_process", "")
             action_type = ai_data.get("action", "chat")
@@ -166,7 +157,7 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
 
 
         except json.JSONDecodeError:
-            await log_and_emit("error", f"Failed to parse AI response as JSON. Raw response: {response.text}")
+            await log_and_emit("error", f"Failed to parse AI response as JSON. Raw response: {ai_response_text}")
             break
         except Exception as e:
             await log_and_emit("error", f"System Error during agentic loop: {str(e)}")

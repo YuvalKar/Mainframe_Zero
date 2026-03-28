@@ -126,4 +126,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt += "\n\n[System Context: Special SYS Action - get_API_descriptions]\n"
     enriched_prompt += get_API_descriptions + "\n\n"
 
+    if app_name:
+        # TODO: add for this app, if avaliable semantics - search by free text to get interface, include skills in it!!!!
+        pass
+
     return enriched_prompt

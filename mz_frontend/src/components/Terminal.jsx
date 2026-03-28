@@ -23,7 +23,10 @@ const BotIcon = () => (
 export default function Terminal({ attentionShelf, setAttentionShelf, sendCommand, latestMessage, isConnected }) {
   const [chatLog, setChatLog] = useState([]);
   const [userInput, setUserInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+
+  const [selectedModel, setSelectedModel] = useState(""); // Removed hardcoded default
+  const [availableModels, setAvailableModels] = useState({}); // New state for models
+
   const [installedApps, setInstalledApps] = useState({});
   const [activeApp, setActiveApp] = useState("");
   
@@ -46,6 +49,11 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         action_name: "sense_get_installed_apps",
         action_data: {}
       });
+      sendCommand({
+        action: "execute",
+        action_name: "get_available_ai_models", 
+        action_data: {}
+      });
     }
   }, [isConnected]);
 
@@ -65,6 +73,30 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       }
       return; // Message handled, do not add to chat log
     }
+
+    // Handle direct result for available models
+    if (latestMessage.type === "direct_result" && latestMessage.action_name === "get_available_ai_models") {
+      const result = latestMessage.data;
+      if (result.success && result.data) {
+        setAvailableModels(result.data);
+        
+        // Grab the first key from the returned dictionary to set as default
+        const firstModelKey = Object.keys(result.data)[0];
+        if (firstModelKey) {
+          setSelectedModel(firstModelKey);
+          
+          // Inform the backend about our default selection
+          sendCommand({
+            action: "change_model",
+            model: firstModelKey
+          });
+        }
+      } else {
+        console.error("Failed to get available models:", result.message);
+      }
+      return; // Message handled, do not add to chat log
+    }    
+
 
     // Filter out other direct execution results (those belong to other senses)
     if (latestMessage.type !== "direct_result") {
@@ -194,10 +226,11 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
               <option value="">Loading apps...</option>
             ) : (Object.entries(installedApps).map(([appName, appDetails]) => (<option key={appName} value={appName}>{appDetails.display_name || appName}</option>)))}
           </select>
+
           <select 
             value={selectedModel} 
             onChange={handleModelChange}
-            disabled={!isConnected}
+            disabled={!isConnected || Object.keys(availableModels).length === 0}
             style={{ 
               padding: "6px 10px", 
               borderRadius: "4px", 
@@ -210,10 +243,21 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
             }}
             onMouseOver={(e) => isConnected && (e.target.style.backgroundColor = "#f1f3f4")}
             onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+            title="Select AI Model"
           >
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
+            {Object.keys(availableModels).length === 0 ? (
+              <option value="">Loading models...</option>
+            ) : (
+              Object.entries(availableModels).map(([modelKey, modelDetails]) => (
+                <option 
+                  key={modelKey} 
+                  value={modelKey} 
+                  title={modelDetails.description || ""}
+                >
+                  {modelKey}
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>

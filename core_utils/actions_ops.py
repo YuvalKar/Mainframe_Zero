@@ -3,6 +3,8 @@ import ast # <-- Safe parsing library
 import importlib.util
 from core_utils.attention_ops import shift_attention
 
+from llm_router import get_available_models
+
 ################################### 
 def execute_single_action(session_context: dict, action_name: str, action_data: dict) -> str:    
     """
@@ -57,6 +59,15 @@ def execute_direct(action_name: str, action_data: dict, session_context: dict) -
         res = switch_apps(**action_data,  session_context=session_context)
         return res
     
+    if (action_name == 'get_available_ai_models'):
+        ai_models = get_available_models()
+        return {
+            "success": True,
+            "message": f"Successfully retrieved settings for {len(ai_models)} AI models.",
+            "data": ai_models,
+        }
+    
+    # Back to main track
     target_path = fined_single_action(session_context, action_name)
 
     if not target_path:
