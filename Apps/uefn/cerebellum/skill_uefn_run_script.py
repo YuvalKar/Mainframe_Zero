@@ -31,7 +31,6 @@ if parent_dir not in sys.path:
 
 from uefn_side import uefn_bridge
 
-
 def execute(script_text: str, function_name: str) -> dict:
 
     # make sure "import unreal" is included in the script
