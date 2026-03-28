@@ -19,7 +19,7 @@ dict: A dictionary containing the status of the operation and the retrieved data
 import sys
 import os
 
-# Get the absolute path of the parent directory (blender_for_uefn)
+# Get the absolute path of the parent directory (blender)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 
@@ -36,7 +36,7 @@ import json
 import importlib
 
 # add lib path
-scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\blender_for_uefn\\blender_side"
+scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\blender\\blender_side"
 if scripts_path not in sys.path:
     sys.path.append(scripts_path)
 

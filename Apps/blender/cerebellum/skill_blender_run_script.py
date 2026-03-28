@@ -8,7 +8,7 @@ WHEN TO USE:
 - When you need to make actions in Blender or to collect data from Blender
 
 INPUTS:
-    script_text (str): The text content string to be used as python script.
+    script_text (str): The text content string to be used as python script. Make sure you include all needed modules and imports in the script text. The script will be saved as a temporary .py file and then executed in Blender.
     function_name (str): The name of the function to be executed from the script provided.
 
 OUTPUT: 
@@ -21,7 +21,7 @@ import sys
 import os
 import time
 
-# Get the absolute path of the parent directory (blender_for_uefn)
+# Get the absolute path of the parent directory (blender)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 
@@ -39,7 +39,7 @@ def execute(script_text: str, function_name: str) -> dict:
         script_text = "import bpy\n" + script_text
 
     # Save the script to temp file (never deleted)
-    scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\blender_for_uefn\\blender_side\\.tmp"
+    scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\blender\\blender_side\\.tmp"
 
     # create name for the script, the function_name + timestamp
     module_name = f"blender_script_{function_name}_{int(time.time())}"

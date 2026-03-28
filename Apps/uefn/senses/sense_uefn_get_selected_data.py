@@ -30,7 +30,7 @@ import json
 import importlib
 
 # Add the UEFN side scripts path (Update this if your path differs)
-scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\blender_for_uefn\\uefn_side"
+scripts_path = r"C:\\Users\\yuval\\Documents\\NBAYA_projects\\Mainframe_Zero\\apps\\uefn\\uefn_side"
 if scripts_path not in sys.path:
     sys.path.append(scripts_path)
 
