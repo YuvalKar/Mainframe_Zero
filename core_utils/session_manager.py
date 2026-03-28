@@ -8,7 +8,7 @@ def init_session(model_name: str = 'gemini-2.5-flash', required_app: str = 'main
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs(".logs", exist_ok=True)
     
-    log_file = os.path.join(".logs", f"session_{session_id}_{model_name}.jsonl")
+    log_file = os.path.join(".logs", f"session_{session_id}_{required_app}.jsonl")
     print(f"[Core] Started new session log: {log_file}")
 
     log_pipeline_step(log_file, "system", f"Session initialized with model '{model_name}'.")

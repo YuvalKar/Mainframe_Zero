@@ -52,7 +52,8 @@ async def handle_change_model(payload: dict, websocket: WebSocket, stream_callba
     new_model = payload.get("model", "gemini-2.5-flash") # Fallback to flash
     print(f"[Server] Switching model to: {new_model}")
     
-    mz_chat_session = session_manager.init_session(new_model)
+    # YUVAL CHNGE - we will not init session on chanege of models
+    # mz_chat_session = session_manager.init_session(new_model)
     
     # Notify the frontend that the switch was successful
     await stream_callback({
