@@ -31,13 +31,17 @@ def execute() -> dict:
         apps_data = {}
         for app_name in app_names:
             settings_path = os.path.join(app_folder, app_name, 'settings.json')
-            if os.path.isfile(settings_path):
-                try:
-                    with open(settings_path, 'r', encoding='utf-8') as f:
-                        apps_data[app_name] = json.load(f)
-                except Exception:
-                    # If the file exists but is unreadable or not valid JSON, skip it.
-                    continue
+
+            # If a settings file doesn't exist for this app, skip it.
+            if not os.path.isfile(settings_path):
+                continue
+
+            try:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    apps_data[app_name] = json.load(f)
+            except (IOError, json.JSONDecodeError):
+                # If the file exists but is unreadable or not valid JSON, skip it.
+                continue
 
         return {
             "success": True,

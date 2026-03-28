@@ -5,8 +5,7 @@
     "semantic": ["blender"],
     "version": "0.1.0",
 
-    "uefn_editor": {
-        "project": {
+    "uefn_project": {
         "name": "Get_Nuts",
         "export": {
             "scale": 4.0,

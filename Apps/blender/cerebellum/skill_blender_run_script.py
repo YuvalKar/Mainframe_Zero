@@ -8,8 +8,9 @@ WHEN TO USE:
 - When you need to make actions in Blender or to collect data from Blender
 
 INPUTS:
-    script_text (str): The text content string to be used as python script. Make sure you include all needed modules and imports in the script text. The script will be saved as a temporary .py file and then executed in Blender.
+    script_text (str): The text content string to be used as python script. Make sure you include all needed modules and imports in the script text. 
     function_name (str): The name of the function to be executed from the script provided.
+    - The script will be saved as a temporary 'function_name.py' file and then executed in Blender.
 
 OUTPUT: 
 dict: A dictionary containing the status of the operation and the retrieved data.
