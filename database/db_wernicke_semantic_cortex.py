@@ -128,14 +128,18 @@ def inject_to_semantic_cortex(parsed_items: list, semantic: str = "Blender") -> 
         return {"success": False, "message": f"Failed to encode documentation: {str(e)}"}
 
 #########################################################################################
-def query_semantic_cortex(user_query: str, semantic: str, limit: int = 5, max_chars: int = 6000) -> list:
+def query_semantic_cortex(user_query: str, semantics: list, limit: int = 5, max_chars: int = 6000) -> list:
     """
-    Search the Wernicke Semantic Cortex for the most relevant documentation.
-    Limits the total output size to avoid overloading the AI context window.
+    Search the Wernicke Semantic Cortex for the most relevant documentation and skills.
+    Accepts a list of semantic namespaces (e.g., ['blender', 'mz_blender']).
     """
     if not user_query:
         print("[Error: Empty query provided.]")
         return []
+
+    # Fallback just in case someone passes a single string instead of a list
+    if isinstance(semantics, str):
+        semantics = [semantics]
 
     try:
         # 1. Load the model and embed the user's free-text query
@@ -151,19 +155,21 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 5, max_ch
         cursor = conn.cursor()
 
         # 3. Perform Vector Similarity Search
+        # Notice the change in the WHERE clause: semantic = ANY(%s)
         search_query = """
             SELECT element_path, element_type, content_markdown,
                    1 - (embedding <=> %s::vector) AS similarity_score
             FROM wernicke_semantic_cortex
-            WHERE semantic = %s
+            WHERE semantic = ANY(%s)
             ORDER BY embedding <=> %s::vector
             LIMIT %s;
         """
         
-        cursor.execute(search_query, (query_embedding, semantic, query_embedding, limit))
+        # Pass the 'semantics' list directly to psycopg2
+        cursor.execute(search_query, (query_embedding, semantics, query_embedding, limit))
         results = cursor.fetchall()
         
-        # 4. Package the results nicely with a hard limit on total characters
+        # 4. Package the results (rest of your original code remains the same)
         formatted_results = []
         current_char_count = 0
         
@@ -171,7 +177,6 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 5, max_ch
             content_text = row[2]
             content_length = len(content_text)
             
-            # Stop if adding this exact chunk pushes us over the maximum allowed size
             if current_char_count + content_length > max_chars:
                 print(f"[System: Context size limit reached. Stopped at {len(formatted_results)} results.]")
                 break
