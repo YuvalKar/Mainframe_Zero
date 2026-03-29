@@ -1,5 +1,7 @@
 from database.db_connection import get_db_connection, release_db_connection, get_local_model
 import json
+import os
+import ast
 
 ############################## Wernicke Semantic Cortex Database Initialization Script ##############################
 def init_wernicke_semantic_cortex_db():
@@ -191,6 +193,80 @@ def query_semantic_cortex(user_query: str, semantic: str, limit: int = 5, max_ch
     except Exception as e:
         print(f"[Error: Failed to query the cortex - {str(e)}]")
         return []
+
+
+#############################################################################################
+def index_mz_app_lib(app_root_path: str):
+    """
+    Scans a given mz_APPNAME directory, parses Python files, 
+    and injects directly into the Wernicke Cortex on a per-file basis.
+    """
+    # Extract the semantic name directly from the folder name (e.g., 'mz_blender')
+    semantic_name = os.path.basename(os.path.normpath(app_root_path))
+    
+    # The parent directory used to calculate relative python dot-paths
+    parent_dir = os.path.dirname(os.path.normpath(app_root_path))
+    
+    print(f"Starting indexer for semantic namespace: '{semantic_name}'...")
+
+    # Walk through the directory tree recursively
+    for dirpath, _, filenames in os.walk(app_root_path):
+        for filename in filenames:
+            # We only care about python files, and we skip empty __init__ files
+            if filename.endswith(".py") and filename != "__init__.py":
+                filepath = os.path.join(dirpath, filename)
+                
+                # Calculate the Python dot-notation path
+                rel_path = os.path.relpath(filepath, parent_dir)
+                module_path = rel_path.replace(os.sep, '.')[:-3]
+                
+                file_items = [] # Reset the list for the current file
+                
+                # Safely read and parse the python file
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    try:
+                        file_content = f.read()
+                        tree = ast.parse(file_content)
+                    except Exception as e:
+                        print(f"[Warning] Failed to parse {filepath}: {e}")
+                        continue
+                        
+                # Walk through the Abstract Syntax Tree to find functions
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        docstring = ast.get_docstring(node)
+                        
+                        # Only index functions that have our standard MZ docstring
+                        if docstring and "NAME:" in docstring:
+                            function_name = node.name
+                            element_path = f"{module_path}.{function_name}"
+                            
+                            # Build the dictionary aligned with your Wernicke DB schema
+                            item = {
+                                'element_path': element_path,
+                                'element_type': 'method', # Aligned with your DB types
+                                'content_markdown': docstring,
+                                'metadata': {
+                                    'language': 'Python',
+                                    'module': module_path,
+                                    'file': filepath
+                                }
+                            }
+                            file_items.append(item)
+                            print(f"  [+] Found Skill: {element_path}")
+                            
+                # Step-by-step injection: Inject items for THIS file only
+                if file_items:
+                    print(f"\nInjecting {len(file_items)} items from '{filename}' into Cortex...")
+                    db_response = inject_to_semantic_cortex(file_items, semantic=semantic_name)
+                    print(f"  -> DB Response: {db_response.get('message', 'No message')}\n")
+
+    print(f"Indexing complete for '{semantic_name}'.")
+
+# Example usage:
+# if __name__ == "__main__":
+#     target_folder = r"C:\Users\yuval\Documents\NBAYA_projects\Mainframe_Zero\apps\blender\blender_side\mz_blender"
+#     index_mz_app_lib(target_folder)
 
 # ---------------------------------------------------------
 # Execution block - Let's test our brain!
