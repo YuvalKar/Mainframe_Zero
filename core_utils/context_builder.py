@@ -5,8 +5,9 @@ import re
 from core_utils.actions_ops import get_available_actions
 
 # Import updated attention ops
-from core_utils.attention_ops import update_session_attention, create_attention
+from core_utils.attention_ops import update_session_attention
 from database.db_chat_history import get_recent_chat_history
+from senses.sense_get_installed_apps import execute as get_installed_apps
 
 #########################################
 def get_system_prompt() -> str:
@@ -117,7 +118,7 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
 
     # Inject Special SYS Action
     get_API_descriptions = """
-    - Before using these actions, you must get the API descriptions for them, call 'get_API_descriptions' with names of the actions you plan to execute.
+    - Before using these actions, call 'get_API_descriptions' with names of the actions you plan to execute.
     Once You got the API description for an action, you can call the action directly by its name and passing the required parameters.
 
     NAME: get_API_descriptions
@@ -127,7 +128,29 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt += get_API_descriptions + "\n\n"
 
     if app_name:
-        # TODO: add for this app, if avaliable semantics - search by free text to get interface, include skills in it!!!!
-        pass
+        # if avaliable semantics - search by free text to get interface, include RAG query for relevant functions in the semantic cortex
+        apps = get_installed_apps()
+        if apps["success"]:
+            apps = apps["data"]
+            if app_name in apps:
+                if "semantics" in apps[app_name]:
+                    get_senantic_RAG = """For {app_name} you can RAG Query the Semantic Cortex (the AI's long-term memory) to find relevant tools, API documentation, or skills for a given task.
+                        call it by using the action 'get_senantic_RAG' with the following inputs:
+
+                        INPUTS:
+                        - task_description (str): A natural language description of what you are trying to achieve (e.g., 'How do I import an FBX file?').
+                        - limit (int, optional): The maximum number of results to return. Default is 5.
+
+                         WHEN TO USE:
+                        - When you need to find specific tools or API documentation to accomplish a task.
+                        - Before writing new code or executing an action, to check if a relevant functions already exists in the requested contexts.
+                        - When you are unsure how to interact with a specific application (like Blender or UEFN).
+                    """.format(app_name = app_name)
+
+                    enriched_prompt += "\n\n[System Context: Special SYS Action - get_senantic_RAG]\n"
+                    enriched_prompt += get_senantic_RAG + "\n\n"
+
 
     return enriched_prompt
+
+#########################################

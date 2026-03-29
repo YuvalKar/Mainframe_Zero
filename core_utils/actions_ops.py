@@ -2,6 +2,8 @@ import os
 import ast # <-- Safe parsing library
 import importlib.util
 from core_utils.attention_ops import shift_attention
+from database.db_wernicke_semantic_cortex import query_semantic_cortex
+from senses.sense_get_installed_apps import execute as get_installed_apps
 
 from llm_router import get_available_models
 
@@ -16,7 +18,11 @@ def execute_single_action(session_context: dict, action_name: str, action_data: 
     if (action_name == 'get_API_descriptions'):
         res = get_API_descriptions(**action_data,  session_context=session_context)
         return f"Action '{action_name}': {res}"
-    
+
+    if (action_name == 'get_senantic_RAG'):
+        res = get_senantic_RAG(**action_data,  session_context=session_context)
+        return f"Action '{action_name}': {res}"
+
     target_path = fined_single_action(session_context, action_name)
 
     if not target_path:
@@ -53,7 +59,11 @@ def execute_direct(action_name: str, action_data: dict, session_context: dict) -
     if (action_name == 'get_API_descriptions'):
         res = get_API_descriptions(**action_data,  session_context=session_context)
         return res
-    
+
+    if (action_name == 'get_senantic_RAG'):
+        res = get_senantic_RAG(**action_data,  session_context=session_context)
+        return f"Action '{action_name}': {res}"
+        
     # Only from direct!
     if (action_name == 'switch_apps'):
         res = switch_apps(**action_data,  session_context=session_context)
@@ -127,6 +137,65 @@ def get_available_actions(directory_path: str) -> dict:
                 available_actions[action_name] = f'Error parsing description safely: {e}'
 
     return available_actions
+
+#######################################################
+def get_senantic_RAG(task_description: str, session_context: dict, limit: int = 5) -> dict:
+    
+    active_attention = session_context.get("active_attention")
+
+    app_name = active_attention.get("required_app") if active_attention else None
+    
+    if not app_name:
+        return {
+            "success": False, 
+            "message": "No active app found in session context. Cannot perform semantic RAG query without an app context."
+        }
+
+    apps = get_installed_apps()
+
+    semantics = []
+
+    if apps["success"]:
+        apps = apps["data"]
+        if app_name in apps:
+            if "semantics" in apps[app_name]:
+                semantics = apps[app_name]["semantics"]
+
+    # Input validation
+    if not task_description or not semantics:
+        return {
+            "success": False, 
+            "message": "Task_description and app semantics are required."
+        }
+        
+    try:
+        # Ask the database using the updated function that accepts a list of semantics
+        results = query_semantic_cortex(
+            user_query=task_description, 
+            semantics=semantics, 
+            limit=limit
+        )
+        
+        # Check if we got any hits
+        if results:
+            return {
+                "success": True, 
+                "message": f"Found {len(results)} relevant resoults in contexts: {app_name} - {semantics}.", 
+                "data": results
+            }
+        else:
+            return {
+                "success": True, 
+                "message": f"No relevant resoults found for this task in the specified contexts: {app_name} - {semantics}.", 
+                "data": []
+            }
+            
+    except Exception as e:
+        # Catch errors gracefully so the AI doesn't crash the main loop
+        return {
+            "success": False, 
+            "message": f"Failed to query Wernicke Cortex: {str(e)}"
+        }
 
 #######################################################
 def get_API_descriptions(action_names: list, session_context: dict) -> dict:

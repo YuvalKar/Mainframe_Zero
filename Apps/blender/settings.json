@@ -2,7 +2,7 @@
     "display_name": "Blender",
     "description": "An app for integrating with Blender.",
     "icon": "Blender_logo.svg",
-    "semantic": ["blender", "mz_blender"],
+    "semantics": ["blender", "mz_blender"],
     "version": "0.1.0",
 
     "uefn_project": {

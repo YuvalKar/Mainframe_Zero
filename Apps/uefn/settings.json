@@ -2,7 +2,6 @@
     "display_name": "UEFN",
     "description": "An app for integrating with UEFN Editor.",
     "icon": "unreal.svg",
-    "semantic": ["unreal"],
     "version": "0.0.0",
 
 
