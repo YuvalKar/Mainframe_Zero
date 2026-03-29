@@ -1,8 +1,9 @@
 # Python cache files
-__pycache__/
+__pycache__
 *.pyc
 *.pyo
 *.pyd
+__init__.py
 
 # Virtual environments
 .venv
@@ -15,18 +16,16 @@ env
 
 # Logs
 .logs
-.logs/*
 
 # VS Code local settings
-.vscode/
+.vscode
 
 # attentions - store all attention, tasks,chats, here
-.attentions/
+.attentions
 
 # temp files
-.tmp/
-.tmp/*
+.tmp
 
-#Language semantic sources
+# Language semantic sources & rest
 .semantic
-.semantic/
+*.fbx

@@ -37,6 +37,8 @@ def _parse_mzignore(root_path: str) -> list:
                     line = line.strip()
                     if line and not line.startswith('#'):
                         ignore_patterns.append(line)
+
+            print(f'Loaded .mzignore with patterns: {ignore_patterns}')
         except Exception:
             print('cant load .mzignore')
             pass # Silently fail and use defaults if we can't read the ignore file
@@ -46,7 +48,7 @@ def _parse_mzignore(root_path: str) -> list:
 def _should_ignore(name: str, ignore_patterns: list) -> bool:
     # Check if a file or folder name matches any of the ignore patterns
     for pattern in ignore_patterns:
-        if fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(name, f"{pattern}/*"):
+        if fnmatch.fnmatch(name, pattern):
             return True
     return False
 
