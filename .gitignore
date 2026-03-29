@@ -27,6 +27,9 @@ env/
 .tmp/
 .tmp/*
 
+# models
+*.fbx
+
 #Language semantic sources
 .semantic
 .semantic/
