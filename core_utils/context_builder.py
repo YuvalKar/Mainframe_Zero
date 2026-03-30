@@ -60,9 +60,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt = ""
     session_id = session_context.get("session_id")
     
-    from core_utils.hud_streamer import send_hud_message
-    send_hud_message("DB_LOADER", {"type": "GAUGE", "value": len(user_input)})
-    send_hud_message("NET_SYNC", {"type": "TIMER", "value": "Synchronizing..."})
+    from core_utils.hud_streamer import send_hud_timer
+    send_hud_timer("Prompting", len(user_input), "Synchronizing...")
 
     # 1. Fetch Recent History
     history = get_recent_chat_history(session_id, limit=5)

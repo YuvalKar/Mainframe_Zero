@@ -2,6 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import './SystemHud.css'; 
 import { useDraggable } from '../hooks/useDraggable';
 
+// This tells Vite to gather all SVG paths from your new folder
+const hologramModules = import.meta.glob('../assets/holograms/*.svg', { 
+  eager: true, 
+  query: '?url', 
+  import: 'default' 
+});
+const hologramStack = Object.values(hologramModules);
+
+
 // --- WIDGET FACTORY ---
 const TextWidget = ({ data }) => (
   <div style={{ color: '#00ffff' }}>{typeof data === 'object' ? JSON.stringify(data) : data}</div>
@@ -19,16 +28,48 @@ const GaugeWidget = ({ data }) => {
   );
 };
 
-const TimerWidget = ({ data }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-    <svg width="20" height="20" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8" fill="none" stroke="cyan" strokeWidth="2" strokeDasharray="10 5">
-        <animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-    <span>{data}</span>
-  </div>
-);
+const TimerWidget = ({ data, onRemove }) => {
+  const initialTime = data?.time || 5;
+  const text = data?.text || (typeof data === 'string' ? data : "System Task");
+  
+  const [timeLeft, setTimeLeft] = useState(initialTime);
+  const [selectedImg, setSelectedImg] = useState(null);
+
+  // 1. Lottery: Pick a random image from the folder ONCE on mount
+  useEffect(() => {
+    if (hologramStack.length > 0) {
+      const randomIndex = Math.floor(Math.random() * hologramStack.length);
+      setSelectedImg(hologramStack[randomIndex]);
+    }
+  }, []);
+
+  // 2. Countdown Logic
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      onRemove?.();
+      return;
+    }
+    const timerId = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timerId);
+  }, [timeLeft, onRemove]);
+
+  return (
+    <div className="hologram-timer-container">
+      {selectedImg && (
+        <img 
+          src={selectedImg} 
+          className="hologram-svg-rotating" 
+          alt="hologram" 
+        />
+      )}
+      <div className="hologram-content">
+        <span className="hologram-label">{text}</span>
+        <span className="hologram-number">{timeLeft}</span>
+        <span className="hologram-unit">SEC</span>
+      </div>
+    </div>
+  );
+};
 
 const WIDGETS = {
   "TEXT": TextWidget,
@@ -42,6 +83,13 @@ const SystemHud = ({ systemLogs = [] }) => {
   const [entities, setEntities] = useState({});
   const logsEndRef = useRef(null);
   const systemLogRef = useRef(null);
+  const removeEntity = (idToRemove) => {
+    setEntities(prev => {
+      const next = { ...prev };
+      delete next[idToRemove];
+      return next;
+    });
+  };
 
   // Keyboard toggle logic (Ctrl + Shift + H)
   useEffect(() => {
@@ -126,7 +174,10 @@ const SystemHud = ({ systemLogs = [] }) => {
               }}
             >
               <div style={{ fontSize: '9px', opacity: 0.5, marginBottom: '8px' }}>{id}</div>
-              <WidgetComponent data={entity.value} />
+              <WidgetComponent 
+                data={entity.value} 
+                onRemove={() => removeEntity(id)} 
+              />
             </div>
           );
         })}

@@ -4,8 +4,8 @@ from typing import Callable, Any, List
 
 # Call it like this:
 # -------------------------
-#     from core_utils.hud_streamer import send_hud_message
-#     send_hud_message("HUD_ID_NAME", "DATA... enrich_prompt called, fetching context and updating attention...")
+#     from core_utils.hud_streamer import send_hud_timer
+#     send_hud_timer("DB_INIT", 10, "Initializing Database...")
 
 class HUDStreamer:
     """
@@ -48,7 +48,7 @@ hud_bus = HUDStreamer()
 
 def send_hud_message(element_id: str, data: Any):
     """
-    A universal helper function to send messages to the HUD.
+    A universal helper function to send raw messages to the HUD.
     Safe to call from both synchronous (def) and asynchronous (async def) functions.
     """
     try:
@@ -59,3 +59,26 @@ def send_hud_message(element_id: str, data: Any):
     except RuntimeError:
         # If no loop is running, we can't send (shouldn't happen in FastAPI)
         print(f"[HUD] Warning: No event loop found to send message {element_id}")
+
+# --- WIDGET HELPER FUNCTIONS ---
+
+def send_hud_text(element_id: str, text: str):
+    """Sends a basic text widget to the HUD."""
+    send_hud_message(element_id, {"type": "TEXT", "value": text})
+
+def send_hud_gauge(element_id: str, percentage: int):
+    """Sends a progress gauge widget (0-100) to the HUD."""
+    send_hud_message(element_id, {"type": "GAUGE", "value": percentage})
+
+def send_hud_timer(element_id: str, seconds: int, text: str):
+    """
+    Sends a self-destructing timer widget to the HUD.
+    Packages the time and text into a structured dictionary.
+    """
+    send_hud_message(element_id, {
+        "type": "TIMER",
+        "value": {
+            "time": seconds,
+            "text": text
+        }
+    })
