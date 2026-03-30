@@ -166,8 +166,15 @@ async def websocket_endpoint(websocket: WebSocket):
     hud_bus.subscribe(forward_to_hud)
     
     async def stream_to_frontend(log_item: dict):
-        await websocket.send_json(log_item)
-        
+        try:
+            await websocket.send_json(log_item)
+        except RuntimeError:
+            # Client disconnected and socket is fully closed. Safe to ignore.
+            pass
+        except Exception as e:
+            # Catch other disconnection errors (like WebSocketDisconnect)
+            print(f"[Server Warning] Could not stream to frontend: {e}")
+
     try:
         while True:
             raw_input = await websocket.receive_text()

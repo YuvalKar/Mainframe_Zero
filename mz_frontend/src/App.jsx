@@ -5,7 +5,6 @@ import Terminal from './components/Terminal'
 import FileExplorer from './components/FileExplorer'
 import DocumentViewer from './components/DocumentViewer'
 import SystemHud from './components/SystemHud'
-import DynamicHud from './components/DynamicHud'
 
 function App() {
   const [attentionShelf, setAttentionShelf] = useState([]);
@@ -212,7 +211,6 @@ function App() {
       </div>
 
       <SystemHud systemLogs={systemLogs} />
-      <DynamicHud systemLogs={systemLogs} />
 
     </div>
   )

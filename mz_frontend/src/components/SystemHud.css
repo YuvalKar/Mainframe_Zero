@@ -1,8 +1,5 @@
 /* Container for the floating HUD */
 .hud-overlay {
-    position: fixed;
-    bottom: 150px;
-    left: 30px;
     width: 800px;
     max-height: 600px;
     
