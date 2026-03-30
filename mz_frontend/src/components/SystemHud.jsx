@@ -163,12 +163,12 @@ const SystemHud = ({ systemLogs = [] }) => {
                 top: '-1000px',
                 left: '-1000px',
                 padding: '15px',
-                background: 'rgba(5, 5, 5, 0.6)', 
+                background: 'rgba(5, 5, 5, 0.2)', 
                 border: '1px solid cyan',
                 borderRadius: '8px', 
                 color: 'cyan', 
                 fontFamily: 'monospace',
-                minWidth: '180px', 
+                minWidth: '100px', 
                 pointerEvents: isVisible ? 'auto' : 'none', // Only clickable when visible
                 backdropFilter: 'blur(3px)'
               }}
