@@ -97,10 +97,12 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       return; // Message handled, do not add to chat log
     }    
 
-
-    // Filter out other direct execution results (those belong to other senses)
+    // Filter out direct execution results and only display user/chat messages in the main UI
     if (latestMessage.type !== "direct_result") {
-      setChatLog(prev => [...prev, latestMessage]);
+      // Allow only 'chat' (bot) and 'user' messages to be displayed in the Terminal
+      if (latestMessage.type === "chat" || latestMessage.type === "user") {
+        setChatLog(prev => [...prev, latestMessage]);
+      }
     }
   }, [latestMessage]);
 
@@ -132,10 +134,10 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       });
     }
 
-    setChatLog(prev => [...prev, { 
-      type: "system", 
-      content: `Active app set to: "${installedApps[newApp]?.name || newApp}"` 
-    }]);
+    // setChatLog(prev => [...prev, { 
+    //   type: "system", 
+    //   content: `Active app set to: "${installedApps[newApp]?.name || newApp}"` 
+    // }]);
   };
 
   // Send message

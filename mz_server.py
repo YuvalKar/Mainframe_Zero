@@ -9,6 +9,7 @@ import mz_core
 from core_utils import session_manager
 from core_utils import context_builder
 from core_utils import actions_ops
+from core_utils.hud_streamer import hud_bus 
 
 # Global variable to hold our active chat session
 mz_chat_session = None
@@ -123,6 +124,7 @@ async def lifespan(app: FastAPI):
         await mz_core.init_workers()
         
         print("[Server] Brain initialized successfully.")
+
     except Exception as e:
         print(f"[Server Error] Failed to initialize brain: {e}")
         
@@ -152,38 +154,43 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("[Server] Client connected to WebSocket.")
     
-    # This is the callback we pass to handlers to stream data back
+    # 1. Define the specific "forwarder" for this connection
+    async def forward_to_hud(payload: dict):
+        try:
+            await websocket.send_json(payload)
+        except Exception:
+            # If sending fails, the connection might be dead
+            pass
+
+    # 2. Subscribe this connection to the HUD bus
+    hud_bus.subscribe(forward_to_hud)
+    
     async def stream_to_frontend(log_item: dict):
         await websocket.send_json(log_item)
         
     try:
         while True:
             raw_input = await websocket.receive_text()
-            
             try:
-                # Expecting a JSON structure like: {"action": "chat", "content": "hello"}
-                # or {"action": "change_model", "model": "gemini-2.5-pro"}
                 data = json.loads(raw_input)
                 action = data.get("action")
                 
-                # Route the request to the appropriate handler
                 if action in ACTION_HANDLERS:
                     await ACTION_HANDLERS[action](data, websocket, stream_to_frontend)
                 else:
-                    print(f"[Server Warning] Unknown action received: {action}")
                     await stream_to_frontend({
                         "type": "error",
                         "content": f"System Error: Unknown action '{action}'"
                     })
-                    
             except json.JSONDecodeError:
-                # Temporary fallback: if raw text is sent, assume it's a chat message
-                print(f"[Server] Received non-JSON string, falling back to chat handler.")
                 fallback_payload = {"action": "chat", "content": raw_input}
                 await handle_chat(fallback_payload, websocket, stream_to_frontend)
                 
     except WebSocketDisconnect:
         print("[Server] Client disconnected.")
+    finally:
+        # 3. CRITICAL: Unsubscribe when the user leaves
+        hud_bus.unsubscribe(forward_to_hud)
 
 
 if __name__ == "__main__":

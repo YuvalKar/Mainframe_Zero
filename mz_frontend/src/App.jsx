@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Terminal from './components/Terminal'
 import FileExplorer from './components/FileExplorer'
-// 1. Import our new component
 import DocumentViewer from './components/DocumentViewer'
+import SystemHud from './components/SystemHud'
+import DynamicHud from './components/DynamicHud'
 
 function App() {
   const [attentionShelf, setAttentionShelf] = useState([]);
@@ -17,6 +18,7 @@ function App() {
   // Panel state
   const [isLeftOpen, setIsLeftOpen] = useState(true);
   const [isRightOpen, setIsRightOpen] = useState(false); 
+  const [systemLogs, setSystemLogs] = useState([]);
   
   // Lifted WebSocket State
   const [isConnected, setIsConnected] = useState(false);
@@ -33,7 +35,11 @@ function App() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setLatestMessage(data); 
+        setLatestMessage(data);
+
+        // Add EVERY incoming message to the HUD subconscious log
+        setSystemLogs(prevLogs => [...prevLogs, data]);
+
       } catch (err) {
         console.error("Parse error:", err);
       }
@@ -204,6 +210,9 @@ function App() {
 
         </div>
       </div>
+
+      <SystemHud systemLogs={systemLogs} />
+      <DynamicHud systemLogs={systemLogs} />
 
     </div>
   )

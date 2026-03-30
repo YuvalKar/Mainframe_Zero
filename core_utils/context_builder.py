@@ -6,6 +6,7 @@ from core_utils.actions_ops import get_available_actions
 
 # Import updated attention ops
 from core_utils.attention_ops import update_session_attention
+from core_utils.hud_streamer import send_hud_message
 from database.db_chat_history import get_recent_chat_history
 from senses.sense_get_installed_apps import execute as get_installed_apps
 
@@ -59,6 +60,10 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt = ""
     session_id = session_context.get("session_id")
     
+    from core_utils.hud_streamer import send_hud_message
+    send_hud_message("DB_LOADER", {"type": "GAUGE", "value": len(user_input)})
+    send_hud_message("NET_SYNC", {"type": "TIMER", "value": "Synchronizing..."})
+
     # 1. Fetch Recent History
     history = get_recent_chat_history(session_id, limit=5)
     if history:

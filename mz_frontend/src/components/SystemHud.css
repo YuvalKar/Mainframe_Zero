@@ -1,0 +1,109 @@
+/* Container for the floating HUD */
+.hud-overlay {
+    position: fixed;
+    bottom: 150px;
+    left: 30px;
+    width: 800px;
+    max-height: 600px;
+    
+    /* Semi-transparent dark background */
+    background-color: rgba(5, 5, 5, 0.5);
+    
+    /* Frosted glass effect */
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    
+    /* UI Polish */
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.05);
+    
+    display: flex;
+    flex-direction: column;
+    z-index: 9999; /* Ensure it stays above everything else */
+    
+    font-family: 'Courier New', Courier, monospace;
+    color: cyan;
+    overflow: hidden;
+    
+    /* Let clicks pass through the transparent parts */
+    pointer-events: none; 
+}
+
+/* Header styling */
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: rgba(0, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.hud-title {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px cyan;
+}
+
+/* Blinking status indicator */
+.hud-status-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: cyan;
+    border-radius: 50%;
+    box-shadow: 0 0 8px cyan;
+}
+
+.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% { opacity: 1; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1; }
+}
+
+/* Logs container */
+.hud-logs-container {
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Scrollbar styling for WebKit browsers */
+.hud-logs-container::-webkit-scrollbar {
+    width: 4px;
+}
+.hud-logs-container::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+/* Individual log entry */
+.hud-log-entry {
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    gap: 10px;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.hud-log-entry:hover {
+    opacity: 1;
+}
+
+.log-timestamp {
+    color: rgba(0, 255, 255, 0.5);
+    white-space: nowrap;
+}
+
+.log-message {
+    color: rgba(200, 255, 255, 0.9);
+}
