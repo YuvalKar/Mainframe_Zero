@@ -147,8 +147,7 @@ const SystemHud = ({ systemLogs = [] }) => {
           // NEW: Control visibility via CSS instead of unmounting the DOM
           opacity: isVisible ? 1 : 0,
           visibility: isVisible ? 'visible' : 'hidden',
-          pointerEvents: isVisible ? 'none' : 'none', // The layer itself is always non-interactive
-          transition: 'opacity 0.2s ease-in-out' // Smooth fade effect
+          pointerEvents: isVisible ? 'none' : 'none', 
         }}
       >
         {Object.entries(entities).map(([id, entity]) => {
