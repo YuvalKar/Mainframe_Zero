@@ -192,7 +192,7 @@ const SystemHud = ({ systemLogs = [] }) => {
           position: 'fixed',
           pointerEvents: isVisible ? 'auto' : 'none',
           left: '30px',
-          bottom: '30px',
+          bottom: '70px',
           // NEW: Control visibility via CSS
           opacity: isVisible ? 1 : 0,
           visibility: isVisible ? 'visible' : 'hidden',
@@ -210,7 +210,7 @@ const SystemHud = ({ systemLogs = [] }) => {
             (log.type === "direct_result" || log.type === "hud_update") ? null : (
               <div key={index} className="hud-log-entry">
                 {log.type && (
-                  <span style={{ color: '#fff', marginRight: '8px', fontWeight: 'bold' }}>
+                  <span style={{ marginRight: '8px', fontWeight: 'bold' }}>
                     [{log.type.toUpperCase()}]
                   </span>
                 )}

@@ -3,24 +3,26 @@
     width: 600px;
     max-height: 450px;
     
-    /* Semi-transparent dark background */
-    background-color: rgba(5, 5, 5, 0.5);
+    /* Light background with slight transparency */
+    background-color: rgba(255, 255, 255, 0.75);
     
     /* Frosted glass effect */
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     
-    /* UI Polish */
-    border-radius: 12px;
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.05);
+    /* UI Polish - Light theme */
+    border-radius: 0px; 
+    border-left: 5px solid #333;
+    border-bottom: 1px solid #555; 
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Softer shadow for light UI */
     
     display: flex;
     flex-direction: column;
-    z-index: 9999; /* Ensure it stays above everything else */
+    z-index: 9999; 
     
     font-family: 'Courier New', Courier, monospace;
-    color: cyan;
+    color: #333333; /* Dark gray text */
     overflow: hidden;
     
     /* Let clicks pass through the transparent parts */
@@ -33,8 +35,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    background-color: rgba(0, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.03); /* Very light gray background for header */
+    border-bottom: 1px solid #dcdcdc;
 }
 
 .hud-title {
@@ -42,16 +44,16 @@
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-    text-shadow: 0 0 5px cyan;
+    text-shadow: none; 
 }
 
 /* Blinking status indicator */
 .hud-status-indicator {
     width: 8px;
     height: 8px;
-    background-color: cyan;
-    border-radius: 50%;
-    box-shadow: 0 0 8px cyan;
+    background-color: #73cf5a; /* Dark gray indicator */
+    border-radius: 0px; 
+    box-shadow: none; 
 }
 
 .pulse {
@@ -78,8 +80,8 @@
     width: 4px;
 }
 .hud-logs-container::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 255, 255, 0.3);
-    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2); /* Darker scrollbar */
+    border-radius: 0px; 
 }
 
 /* Individual log entry */
@@ -88,7 +90,7 @@
     line-height: 1.0;
     display: flex;
     gap: 10px;
-    opacity: 0.7;
+    opacity: 0.8; /* Slightly higher base opacity for dark text on light bg */
     transition: opacity 0.3s ease;
 }
 
@@ -97,13 +99,15 @@
 }
 
 .log-timestamp {
-    color: rgba(0, 255, 255, 0.5);
+    color: #888888; /* Medium gray for prefixes/timestamps */
     white-space: nowrap;
 }
 
 .log-message {
-    color: rgba(200, 255, 255, 0.9);
+    color: #222222; /* Almost black for the main message */
 }
+
+/* ####################### */
 
 .hologram-timer-container {
     position: relative;
@@ -120,11 +124,8 @@
     height: 100%;
     animation: rotate-clockwise 30s linear infinite;
     
-    /* This filter turns the white SVG into a glowing Cyan hologram */
-    filter: 
-        drop-shadow(0 0 5px cyan) 
-        drop-shadow(0 0 15px rgba(0, 255, 255, 0.5))
-        brightness(1.5);
+    /* Removed cyan glow */
+    filter: none;
     
     pointer-events: none;
 }
@@ -135,8 +136,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: cyan;
-    text-shadow: 0 0 10px cyan;
+    color: #ffffff; /* Changed from cyan */
+    text-shadow: none; /* Removed cyan text-shadow */
     font-family: monospace;
 }
 
