@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import './SystemHud.css'; 
 import { useDraggable } from '../hooks/useDraggable';
 
-// This tells Vite to gather all SVG paths from your new folder
 const hologramModules = import.meta.glob('../assets/holograms/*.svg', { 
   eager: true, 
   query: '?url', 
@@ -21,7 +20,7 @@ const GaugeWidget = ({ data }) => {
   const val = typeof data === 'number' ? data : 50;
   return (
     <div className="fui-gauge-container">
-      <div className="fui-gauge-label">VALUE: {val}%</div>
+      <div className="fui-gauge-label">LOD: {val}%</div>
       <div className="fui-gauge-track">
         <div className="fui-gauge-fill" style={{ width: `${val}%` }} />
       </div>
@@ -31,12 +30,11 @@ const GaugeWidget = ({ data }) => {
 
 const TimerWidget = ({ data, onRemove }) => {
   const initialTime = data?.time || 5;
-  const text = data?.text || (typeof data === 'string' ? data : "System Task");
+  const text = data?.text || (typeof data === 'string' ? data : "TASK");
   
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [selectedImg, setSelectedImg] = useState(null);
 
-  // 1. Lottery: Pick a random image from the folder ONCE on mount
   useEffect(() => {
     if (hologramStack.length > 0) {
       const randomIndex = Math.floor(Math.random() * hologramStack.length);
@@ -44,7 +42,6 @@ const TimerWidget = ({ data, onRemove }) => {
     }
   }, []);
 
-  // 2. Countdown Logic
   useEffect(() => {
     if (timeLeft <= 0) {
       onRemove?.();
@@ -77,6 +74,7 @@ const WIDGETS = {
   "GAUGE": GaugeWidget,
   "TIMER": TimerWidget
 };
+
 // ----------------------
 
 const SystemHud = ({ systemLogs = [] }) => {
@@ -93,7 +91,6 @@ const SystemHud = ({ systemLogs = [] }) => {
     });
   };
 
-  // Keyboard toggle logic (Ctrl + Shift + H)
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.ctrlKey && event.shiftKey && (event.key.toLowerCase() === 'h' || event.key === 'י')) {
@@ -104,7 +101,6 @@ const SystemHud = ({ systemLogs = [] }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Sync React entities state
   useEffect(() => {
     if (systemLogs.length > 0) {
       const updatedEntities = {};
@@ -122,7 +118,6 @@ const SystemHud = ({ systemLogs = [] }) => {
     }
   }, [systemLogs]);
 
-  // Auto-scroll for the log container
   useEffect(() => {
     if (isVisible && logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -148,7 +143,6 @@ const SystemHud = ({ systemLogs = [] }) => {
             <div 
               key={id} 
               id={`hud-entity-${id}`}
-              // Add a special class if it's a TIMER to remove the box styling
               className={`hud-entity ${entity.type === 'TIMER' ? 'hologram-naked' : ''}`} 
               style={{
                 position: 'fixed',
@@ -157,8 +151,7 @@ const SystemHud = ({ systemLogs = [] }) => {
                 pointerEvents: isVisible ? 'auto' : 'none', 
               }}
             >
-              {/* Hide the ID label for timers to keep them completely floating and clean */}
-              {entity.type !== 'TIMER' && <div className="hud-entity-id">{id}</div>}
+              {entity.type !== 'TIMER' && <div className="hud-entity-id">ID:{id}</div>}
               <WidgetComponent 
                 data={entity.value} 
                 onRemove={() => removeEntity(id)} 
@@ -180,7 +173,7 @@ const SystemHud = ({ systemLogs = [] }) => {
         }}
       >
         <div className="hud-header">
-          <span className="hud-title">System Subconscious</span>
+          <span className="hud-title">SYS.SUBCONSCIOUS</span>
           <div className="hud-status-indicator pulse"></div>
         </div>
         

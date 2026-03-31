@@ -1,62 +1,82 @@
+/* ========================================= */
+/* --- SYSTEM HUD - HEAVY FUI B&W STYLE --- */
+/* ========================================= */
+
 /* Container for the floating HUD */
 .hud-overlay {
-    position: fixed; /* THE MISSING PIECE! Keeps it floating */
+    position: fixed; 
     left: 30px;
     bottom: 70px;
     width: 600px;
     max-height: 450px;
     
-    /* Light background with slight transparency */
-    background-color: rgba(255, 255, 255, 0.75);
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
     
-    /* Frosted glass effect */
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    
-    /* UI Polish - Light theme */
+    /* FUI Heavy Geometry Borders */
     border-radius: 0px; 
-    border-left: 5px solid #333;
-    border-bottom: 1px solid #555; 
-
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+    border: 2px solid #000000;
+    
+    /* Hard blocky shadow for a hardware feel */
+    box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.05); 
     
     display: flex;
     flex-direction: column;
     z-index: 9999; 
     
     font-family: 'Courier New', Courier, monospace;
-    color: #333333; /* Dark gray text */
-    overflow: hidden;
+    color: #000000; 
     
-    /* Transitions for toggle */
+    /* We need overflow visible to allow outer FUI decorations, 
+       but we will handle scroll inside the logs container */
+    overflow: visible; 
+    
     transition: opacity 0.2s ease-in-out, visibility 0.2s;
 }
 
-/* Header styling */
+/* Techy striped accent on the bottom right */
+.hud-overlay::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    right: 20px;
+    width: 120px;
+    height: 6px;
+    background: repeating-linear-gradient(
+        -45deg,
+        #000,
+        #000 2px,
+        transparent 2px,
+        transparent 5px
+    );
+    z-index: 10;
+}
+
+/* Header styling - INVERTED to separate from main app */
 .hud-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    background-color: rgba(0, 0, 0, 0.03); 
-    border-bottom: 1px solid #dcdcdc;
+    background-color: #000000; /* Black header block */
+    color: #ffffff; /* White text */
+    border-bottom: 4px solid #cccccc; /* Thick separator */
 }
 
 .hud-title {
     font-size: 14px;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    text-shadow: none; 
+    letter-spacing: 2px;
 }
 
 /* Blinking status indicator */
 .hud-status-indicator {
-    width: 8px;
-    height: 8px;
-    background-color: #73cf5a; 
-    border-radius: 0px; 
-    box-shadow: none; 
+    width: 10px;
+    height: 10px;
+    background-color: #ffffff; 
+    border: 1px solid #000;
 }
 
 .pulse {
@@ -76,44 +96,36 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: calc(450px - 45px); /* Ensure scrolling stays inside */
 }
 
-/* Scrollbar styling for WebKit browsers */
+/* Scrollbar styling */
 .hud-logs-container::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
+    background-color: #f0f0f0;
+    border-left: 1px solid #ccc;
 }
 .hud-logs-container::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2); 
-    border-radius: 0px; 
+    background-color: #000000; 
 }
 
 /* Individual log entry */
 .hud-log-entry {
-    font-size: 10px;
-    line-height: 1.0;
+    font-size: 11px;
+    line-height: 1.1;
     display: flex;
     gap: 10px;
-    opacity: 0.8; 
-    transition: opacity 0.3s ease;
-}
-
-.hud-log-entry:hover {
-    opacity: 1;
+    opacity: 0.85; 
 }
 
 .log-type {
     margin-right: 8px;
     font-weight: bold;
-    color: #555555;
-}
-
-.log-timestamp {
-    color: #888888; 
-    white-space: nowrap;
+    color: #000000;
 }
 
 .log-message {
-    color: #222222; 
+    color: #333333; 
 }
 
 /* ####################### */
@@ -130,37 +142,64 @@
     transition: opacity 0.2s ease-in-out, visibility 0.2s;
 }
 
+/* Widget Base */
 .hud-entity {
     position: fixed;
-    top: -1000px;
-    left: -1000px;
-    padding: 15px;
+    padding: 15px 20px;
     
-    background-color: rgba(255, 255, 255, 0.85); 
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background-color: rgba(255, 255, 255, 0.95); 
+    backdrop-filter: blur(4px);
     
-    /* border: 1px solid #cccccc;*/
-    border-left: 3px solid #555555; 
-    border-radius: 0px; 
+    /* FUI Heavy geometric borders */
+    border: 2px solid #000000;
+    border-top: 8px solid #000000; /* Heavy top bar */
     
-    color: #333333; 
+    color: #000000; 
     font-family: 'Courier New', Courier, monospace;
-    min-width: 100px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    min-width: 140px; 
+    
+    /* Hard blocky shadow */
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.08);
 }
 
+/* Thick L-Bracket Bottom Right */
+.hud-entity::before {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 30px;
+    height: 6px;
+    background-color: #000000;
+}
+
+.hud-entity::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 6px;
+    height: 30px;
+    background-color: #000000;
+}
+
+/* Sci-fi ID Label */
 .hud-entity-id {
-    font-size: 9px;
-    opacity: 0.5;
-    margin-bottom: 8px;
-    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: bold;
+    background-color: #000000;
+    color: #ffffff;
+    padding: 2px 6px;
+    display: inline-block;
+    margin-bottom: 12px;
+    margin-top: -5px;
+    letter-spacing: 1px;
 }
 
 /* Text Widget */
 .fui-text-widget {
-    color: #333333;
-    font-weight: 500;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 /* Gauge Widget */
@@ -170,20 +209,20 @@
 
 .fui-gauge-label {
     font-size: 10px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-weight: bold;
-    color: #555555;
+    text-transform: uppercase;
 }
 
 .fui-gauge-track {
-    height: 4px;
-    background-color: #e0e0e0;
-    border: 1px solid #cccccc;
+    height: 8px;
+    border: 1px solid #000000;
+    padding: 1px; /* Creates a gap between border and fill */
 }
 
 .fui-gauge-fill {
     height: 100%;
-    background-color: #555555; 
+    background-color: #000000; 
 }
 
 /* --- NAKED HOLOGRAM OVERRIDE --- */
@@ -196,7 +235,12 @@
     padding: 0;
 }
 
-/* Hologram Timer Widget */
+/* Hide the geometric brackets for the naked hologram */
+.hud-entity.hologram-naked::before,
+.hud-entity.hologram-naked::after {
+    display: none;
+}
+
 .hologram-timer-container {
     position: relative;
     width: 180px;
@@ -213,10 +257,8 @@
     animation: rotate-clockwise 30s linear infinite;
     pointer-events: none;
     
-    /* Worn look + White Glow */
-    opacity: 0.65; /* Drops the opacity for a faded/worn look */
-    /* Assumes your SVG is mostly white or light gray. If it's black, you might need invert(1) before the drop-shadow */
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); 
+    /* Makes the SVG dark gray, with a glowing white aura behind it */
+    filter: invert(0.8) drop-shadow(0 0 8px rgba(255, 255, 255, 1)); 
 }
 
 .hologram-content {
@@ -225,15 +267,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #333333; 
-    /* Adding a subtle white glow to the text to match the hologram vibe */
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); 
+    color: #222222; 
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); 
     font-family: 'Courier New', Courier, monospace;
 }
 
-.hologram-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; font-weight: bold; }
-.hologram-number { font-size: 28px; font-weight: bold; }
-.hologram-unit { font-size: 8px; opacity: 0.6; font-weight: bold; }
+.hologram-label { font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+.hologram-number { font-size: 32px; font-weight: bold; margin: -2px 0; }
+.hologram-unit { font-size: 8px; font-weight: bold; }
 
 @keyframes rotate-clockwise {
     from { transform: rotate(0deg); }
