@@ -1,5 +1,8 @@
 /* Container for the floating HUD */
 .hud-overlay {
+    position: fixed; /* THE MISSING PIECE! Keeps it floating */
+    left: 30px;
+    bottom: 70px;
     width: 600px;
     max-height: 450px;
     
@@ -15,7 +18,7 @@
     border-left: 5px solid #333;
     border-bottom: 1px solid #555; 
 
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Softer shadow for light UI */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
     
     display: flex;
     flex-direction: column;
@@ -25,8 +28,8 @@
     color: #333333; /* Dark gray text */
     overflow: hidden;
     
-    /* Let clicks pass through the transparent parts */
-    pointer-events: none; 
+    /* Transitions for toggle */
+    transition: opacity 0.2s ease-in-out, visibility 0.2s;
 }
 
 /* Header styling */
@@ -35,7 +38,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    background-color: rgba(0, 0, 0, 0.03); /* Very light gray background for header */
+    background-color: rgba(0, 0, 0, 0.03); 
     border-bottom: 1px solid #dcdcdc;
 }
 
@@ -51,7 +54,7 @@
 .hud-status-indicator {
     width: 8px;
     height: 8px;
-    background-color: #73cf5a; /* Dark gray indicator */
+    background-color: #73cf5a; 
     border-radius: 0px; 
     box-shadow: none; 
 }
@@ -80,7 +83,7 @@
     width: 4px;
 }
 .hud-logs-container::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2); /* Darker scrollbar */
+    background-color: rgba(0, 0, 0, 0.2); 
     border-radius: 0px; 
 }
 
@@ -90,7 +93,7 @@
     line-height: 1.0;
     display: flex;
     gap: 10px;
-    opacity: 0.8; /* Slightly higher base opacity for dark text on light bg */
+    opacity: 0.8; 
     transition: opacity 0.3s ease;
 }
 
@@ -98,17 +101,102 @@
     opacity: 1;
 }
 
+.log-type {
+    margin-right: 8px;
+    font-weight: bold;
+    color: #555555;
+}
+
 .log-timestamp {
-    color: #888888; /* Medium gray for prefixes/timestamps */
+    color: #888888; 
     white-space: nowrap;
 }
 
 .log-message {
-    color: #222222; /* Almost black for the main message */
+    color: #222222; 
 }
 
 /* ####################### */
+/* DYNAMIC HUD & WIDGETS   */
+/* ####################### */
 
+.dynamic-hud-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9998;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s;
+}
+
+.hud-entity {
+    position: fixed;
+    top: -1000px;
+    left: -1000px;
+    padding: 15px;
+    
+    background-color: rgba(255, 255, 255, 0.85); 
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    
+    /* border: 1px solid #cccccc;*/
+    border-left: 3px solid #555555; 
+    border-radius: 0px; 
+    
+    color: #333333; 
+    font-family: 'Courier New', Courier, monospace;
+    min-width: 100px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.hud-entity-id {
+    font-size: 9px;
+    opacity: 0.5;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+/* Text Widget */
+.fui-text-widget {
+    color: #333333;
+    font-weight: 500;
+}
+
+/* Gauge Widget */
+.fui-gauge-container {
+    width: 100%;
+}
+
+.fui-gauge-label {
+    font-size: 10px;
+    margin-bottom: 4px;
+    font-weight: bold;
+    color: #555555;
+}
+
+.fui-gauge-track {
+    height: 4px;
+    background-color: #e0e0e0;
+    border: 1px solid #cccccc;
+}
+
+.fui-gauge-fill {
+    height: 100%;
+    background-color: #555555; 
+}
+
+/* --- NAKED HOLOGRAM OVERRIDE --- */
+.hud-entity.hologram-naked {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+/* Hologram Timer Widget */
 .hologram-timer-container {
     position: relative;
     width: 180px;
@@ -123,11 +211,12 @@
     width: 100%;
     height: 100%;
     animation: rotate-clockwise 30s linear infinite;
-    
-    /* Removed cyan glow */
-    filter: none;
-    
     pointer-events: none;
+    
+    /* Worn look + White Glow */
+    opacity: 0.65; /* Drops the opacity for a faded/worn look */
+    /* Assumes your SVG is mostly white or light gray. If it's black, you might need invert(1) before the drop-shadow */
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); 
 }
 
 .hologram-content {
@@ -136,14 +225,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #ffffff; /* Changed from cyan */
-    text-shadow: none; /* Removed cyan text-shadow */
-    font-family: monospace;
+    color: #333333; 
+    /* Adding a subtle white glow to the text to match the hologram vibe */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); 
+    font-family: 'Courier New', Courier, monospace;
 }
 
-.hologram-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; }
+.hologram-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; font-weight: bold; }
 .hologram-number { font-size: 28px; font-weight: bold; }
-.hologram-unit { font-size: 8px; opacity: 0.6; }
+.hologram-unit { font-size: 8px; opacity: 0.6; font-weight: bold; }
 
 @keyframes rotate-clockwise {
     from { transform: rotate(0deg); }
