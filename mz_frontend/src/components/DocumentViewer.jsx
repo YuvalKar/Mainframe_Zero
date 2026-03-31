@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react';
 
 // Import the official Monaco Editor for React
 import Editor from '@monaco-editor/react';
+import './DocumentViewer.css'; // Added import for our clean styles
 
 export default function DocumentViewer({ activeDocument, sendCommand, latestMessage, isConnected, onSelectionChange }) {
   const [fileContent, setFileContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Helper function to determine the language from the file extension
+  // Helper function to determine the language from the file extension
   const getLanguage = (filename) => {
     if (!filename) return 'text';
     const ext = filename.split('.').pop().toLowerCase();
@@ -33,8 +34,6 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
       // Get the exact text based on the user's selection range
       const selectedText = editor.getModel().getValueInRange(e.selection).trim();
       
-      //console.log("Monaco selection:", selectedText);
-
       // Send it up to App.jsx just like before
       if (onSelectionChange) {
         onSelectionChange(selectedText);
@@ -42,7 +41,7 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     });
   };
 
-  // 3.Fetch file content when activeDocument changes
+  // Fetch file content when activeDocument changes
   useEffect(() => {
     if (isConnected && activeDocument) {
       setIsLoading(true);
@@ -74,57 +73,39 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
 
   if (!activeDocument) {
     return (
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: '#ffffff',
-        border: '1px dashed var(--border-color)',
-        borderRadius: '8px',
-        color: 'var(--text-muted)',
-        fontStyle: 'italic',
-        fontSize: '0.9em'
-      }}>
+      <div className="document-viewer-empty">
         Select a file from the shelf to preview...
       </div>
     );
   }
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ paddingBottom: "10px", fontWeight: "bold", color: "var(--text-main)", fontSize: "0.9em" }}>
+    <div className="document-viewer-container">
+      <div className="document-viewer-header">
         {activeDocument.name}
       </div>
       
-      <div style={{ 
-          flex: 1, 
-          overflowY: "auto", 
-          backgroundColor: "#f8f9fa", 
-          borderRadius: "6px",
-          border: "1px solid var(--border-color)",
-          color: "var(--text-main)"
-        }}
-      >
+      <div className="document-viewer-content">
         {isLoading ? (
-          <div style={{ padding: "15px", color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.85em" }}>
+          <div className="document-viewer-loading">
             Loading content...
           </div>
         ) : (
           <Editor
             height="100%"
             language={getLanguage(activeDocument.name)}
-            theme="light"
+            theme="light" // Monaco's light theme fits the grayscale aesthetic well
             value={fileContent}
             onMount={handleEditorDidMount}
             options={{
-              // Keep it read-only for now, setting the stage for future editing
               readOnly: true,
-              // Hide the minimap on the right so it stays looking like a simple viewer
               minimap: { enabled: false },
-              // Wrap long lines so we don't have horizontal scrollbars
               wordWrap: 'on',
-              fontSize: 12
+              fontSize: 12,
+              // Apply a square, technical font family for the code editor
+              fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
+              // Cleaner look for the editor lines
+              renderLineHighlight: 'none' 
             }}
           />
         )}

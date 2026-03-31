@@ -1,0 +1,174 @@
+/* FileExplorer.css */
+
+.explorer-container {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 10px;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: #ffffff;
+}
+
+/* --- Common Section Styles --- */
+.explorer-section {
+  flex: 1;
+  overflow-y: auto;
+  border-bottom: 1px solid #eeeeee;
+  padding-bottom: 15px;
+}
+
+.shelf-section {
+  height: 30%;
+  min-height: 200px;
+  overflow-y: auto;
+  padding-top: 15px;
+}
+
+.section-title {
+  color: #888888;
+  margin: 0 0 15px 10px;
+  font-size: 0.75em;
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.empty-message {
+  color: #aaaaaa;
+  font-style: italic;
+  font-size: 0.85em;
+  padding-left: 10px;
+}
+
+/* --- Tree Node Styles --- */
+.tree-node-wrapper {
+  margin-left: 10px;
+  margin-top: 2px;
+}
+
+.tree-node-dir {
+  cursor: pointer;
+  font-weight: 300;
+  font-size: 0.8em;
+  color: #555555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.tree-node-dir:hover {
+  color: #000000;
+}
+
+.tree-node-file {
+  margin-left: 28px;
+  cursor: pointer;
+  color: #888888;
+  background-color: transparent;
+  font-size: 0.8em;
+  font-weight: 300;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tree-node-file:hover {
+  background-color: #f7f7f7;
+  color: #333333;
+}
+
+.tree-node-file.selected {
+  color: #111111;
+  background-color: #f0f0f0;
+  font-weight: 400;
+}
+
+/* --- Attention Shelf Item Styles --- */
+.shelf-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background-color: #ffffff;
+  border: 1px solid #e4e4e4;
+  border-radius: 4px;
+  font-size: 0.82em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.shelf-item:hover {
+  border-color: #cccccc;
+}
+
+/* Faded look for sent items */
+.shelf-item.sent {
+  border: 1px dashed #cccccc;
+  background-color: #fcfcfc;
+}
+
+/* Sharp black border for the active document */
+.shelf-item.active,
+.shelf-item.active.sent {
+ border-radius: 0px;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #888;
+  /* Explicitly remove left and right borders just in case they were inherited */
+  border-left: 4px solid #888;
+  border-right: 1px solid #f0f0f0;
+  background-color: #f0f0f0;
+}
+
+.shelf-item-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.shelf-item-status {
+  font-size: 1.1em;
+  color: #888888;
+}
+
+.shelf-item-status.sent {
+  color: #aaaaaa;
+}
+
+.shelf-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #555555;
+  font-weight: 400;
+}
+
+.shelf-item.active .shelf-item-name {
+  color: #000000;
+  font-weight: 400;
+}
+
+.shelf-item.sent .shelf-item-name {
+  color: #aaaaaa;
+}
+
+.shelf-item-remove {
+  cursor: pointer;
+  color: #bbbbbb;
+  font-weight: bold;
+  font-size: 1.2em;
+  padding-left: 10px;
+  transition: color 0.15s ease;
+}
+
+.shelf-item-remove:hover {
+  color: #000000;
+}

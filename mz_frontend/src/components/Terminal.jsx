@@ -1,5 +1,6 @@
 // src/components/Terminal.jsx
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react';
+import './Terminal.css'; // Make sure the path matches where you saved the CSS file
 
 // --- Simple Minimalist Icons ---
 
@@ -24,8 +25,8 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
   const [chatLog, setChatLog] = useState([]);
   const [userInput, setUserInput] = useState("");
 
-  const [selectedModel, setSelectedModel] = useState(""); // Removed hardcoded default
-  const [availableModels, setAvailableModels] = useState({}); // New state for models
+  const [selectedModel, setSelectedModel] = useState("");
+  const [availableModels, setAvailableModels] = useState({});
 
   const [installedApps, setInstalledApps] = useState({});
   const [activeApp, setActiveApp] = useState("");
@@ -61,17 +62,16 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
   useEffect(() => {
     if (!latestMessage) return;
 
-    // Filter out direct execution results (those belong to the senses, like FileExplorer)
     // Handle direct result for installed apps
     if (latestMessage.type === "direct_result" && latestMessage.action_name === "sense_get_installed_apps") {
       const result = latestMessage.data;
       if (result.success && result.data) {
         setInstalledApps(result.data);
-        setActiveApp(prev => prev ? prev : (Object.keys(result.data)[0] || "")); // TODO: set a way to find the main up!!!
+        setActiveApp(prev => prev ? prev : (Object.keys(result.data)[0] || ""));
       } else {
         console.error("Failed to get installed apps:", result.message);
       }
-      return; // Message handled, do not add to chat log
+      return; 
     }
 
     // Handle direct result for available models
@@ -80,12 +80,10 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       if (result.success && result.data) {
         setAvailableModels(result.data);
         
-        // Grab the first key from the returned dictionary to set as default
         const firstModelKey = Object.keys(result.data)[0];
         if (firstModelKey) {
           setSelectedModel(firstModelKey);
           
-          // Inform the backend about our default selection
           sendCommand({
             action: "change_model",
             model: firstModelKey
@@ -94,12 +92,11 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       } else {
         console.error("Failed to get available models:", result.message);
       }
-      return; // Message handled, do not add to chat log
+      return; 
     }    
 
-    // Filter out direct execution results and only display user/chat messages in the main UI
+    // Filter out direct execution results and only display user/chat messages
     if (latestMessage.type !== "direct_result") {
-      // Allow only 'chat' (bot) and 'user' messages to be displayed in the Terminal
       if (latestMessage.type === "chat" || latestMessage.type === "user") {
         setChatLog(prev => [...prev, latestMessage]);
       }
@@ -110,7 +107,6 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     const newModel = e.target.value;
     setSelectedModel(newModel);
     
-    // Send model change command
     if (isConnected) {
       sendCommand({
         action: "change_model",
@@ -123,7 +119,6 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     const newApp = e.target.value;
     setActiveApp(newApp);
 
-    // Send command to backend to switch app context
     if (isConnected) {
       sendCommand({
         action: "execute",
@@ -133,24 +128,15 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         }
       });
     }
-
-    // setChatLog(prev => [...prev, { 
-    //   type: "system", 
-    //   content: `Active app set to: "${installedApps[newApp]?.name || newApp}"` 
-    // }]);
   };
 
   // Send message
   const sendMessage = () => {
     if (!userInput.trim() || !isConnected) return;
 
-    // Find unsent files
     const filesToSend = attentionShelf.filter(f => !f.sent);
-    // const filesToSend = attentionShelf;
-    // const contextString = filesToSend.map(f => `@${f.path}`).join(" ");
-    const contextString = ""
+    const contextString = "";
     
-    // Prepare string for UI vs Backend
     setChatLog(prev => [...prev, { type: "user", content: userInput }]);
     
     sendCommand({
@@ -158,7 +144,6 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       content: contextString ? `${userInput}\n\n[Context]: ${contextString}` : userInput
     });
 
-    // Mark as sent
     if (filesToSend.length > 0) {
       setAttentionShelf(prev => 
         prev.map(f => 
@@ -171,80 +156,49 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
   };
 
   return (
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column",
-      height: "100%", 
-      backgroundColor: "var(--bg-main)",
-      position: "relative"
-    }}>
+    <div className="terminal-container">
       
       {/* Top Bar / Header */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        padding: "15px 24px",
-        borderBottom: "1px solid var(--border-color)",
-        backgroundColor: "var(--bg-main)",
-        zIndex: 10
-      }}>
-        <img src="/nBaya_logo.svg" alt="nBaya logo" style={{ height: "24px", margin: 0 }} />
+      <div className="terminal-header">
+        <img src="/nBaya_logo.svg" alt="nBaya logo" className="terminal-logo" />
         
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="header-controls">
           {!isConnected && (
-            <span style={{ color: "#d93025", fontSize: "0.85em", display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ display: "inline-block", width: "8px", height: "8px", backgroundColor: "#d93025", borderRadius: "50%" }}></span>
+            <span className="status-offline">
+              <span className="status-dot"></span>
               Offline
             </span>
-             )}
+          )}
             
-            {activeApp && installedApps[activeApp] && installedApps[activeApp].icon &&(
-              <img
-                src={installedApps[activeApp].icon}
-                alt={`${installedApps[activeApp].display_name} Logo`}
-                style={{ height: "24px", marginRight: "10px" }} // Adjust height as needed
-              /> )}
+          {activeApp && installedApps[activeApp] && installedApps[activeApp].icon &&(
+            <img
+              src={installedApps[activeApp].icon}
+              alt={`${installedApps[activeApp].display_name} Logo`}
+              className="app-icon"
+            /> 
+          )}
+          
           <select
             value={activeApp}
             onChange={handleAppChange}
             disabled={!isConnected || Object.keys(installedApps).length === 0}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "4px",
-              border: "1px solid transparent",
-              backgroundColor: "transparent",
-              color: "var(--text-muted)",
-              fontSize: "0.9em",
-              cursor: isConnected ? "pointer" : "not-allowed",
-              outline: "none",
-              textTransform: 'capitalize'
-            }}
-            onMouseOver={(e) => isConnected && (e.target.style.backgroundColor = "#f1f3f4")}
-            onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
-           title="Select Active App"
+            className="custom-select"
+            title="Select Active App"
           >
             {Object.keys(installedApps).length === 0 ? (
               <option value="">Loading apps...</option>
-            ) : (Object.entries(installedApps).map(([appName, appDetails]) => (<option key={appName} value={appName}>{appDetails.display_name || appName}</option>)))}
+            ) : (
+              Object.entries(installedApps).map(([appName, appDetails]) => (
+                <option key={appName} value={appName}>{appDetails.display_name || appName}</option>
+              ))
+            )}
           </select>
 
           <select 
             value={selectedModel} 
             onChange={handleModelChange}
             disabled={!isConnected || Object.keys(availableModels).length === 0}
-            style={{ 
-              padding: "6px 10px", 
-              borderRadius: "4px", 
-              border: "1px solid transparent",
-              backgroundColor: "transparent",
-              color: "var(--text-muted)",
-              fontSize: "0.9em",
-              cursor: isConnected ? "pointer" : "not-allowed",
-              outline: "none"
-            }}
-            onMouseOver={(e) => isConnected && (e.target.style.backgroundColor = "#f1f3f4")}
-            onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+            className="custom-select"
             title="Select AI Model"
           >
             {Object.keys(availableModels).length === 0 ? (
@@ -264,125 +218,56 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         </div>
       </div>
 
-      {/* Chat Area - Adjusted Padding */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: "auto", 
-        padding: "24px 40px", // Replaced the 15% with a fixed, comfortable padding
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        scrollBehavior: "smooth"
-      }}>
+      {/* Chat Area */}
+      <div className="chat-area">
         {chatLog.length === 0 && (
-          <div style={{ margin: "auto", textAlign: "center", color: "var(--text-muted)" }}>
-            <h3 style={{ fontWeight: 300, fontSize: "1.5em", marginBottom: "10px" }}>How can I help you today?</h3>
-            <p style={{ fontSize: "0.9em" }}>Select files from the explorer or just start typing.</p>
+          <div className="empty-state">
+            <h3>How can I help you today?</h3>
+            <p>Select files from the explorer or just start typing.</p>
           </div>
         )}
 
-        {chatLog.map((log, index) => (
-          <div key={index} style={{ 
-            display: "flex", 
-            gap: "16px",
-            alignItems: "flex-start"
-          }}>
-            {/* Avatar */}
-            <div style={{ 
-              minWidth: "32px", 
-              height: "32px", 
-              borderRadius: "50%", 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center",
-              backgroundColor: log.type === "user" ? "#f1f3f4" : "#e8f0fe"
-            }}>
-              {log.type === "user" ? <UserIcon /> : <BotIcon />}
-            </div>
-            
-            {/* Message Content & Metadata */}
-            <div style={{ flex: 1, paddingTop: "4px" }}>
-              
-              {/* Subtle Label for non-user messages (e.g., 'thought', 'system', 'error') */}
-              {log.type !== "user" && (
-                <div style={{ 
-                  fontSize: "0.7em", 
-                  color: log.type === "error" ? "#d93025" : "var(--text-muted)", 
-                  marginBottom: "4px", 
-                  textTransform: "uppercase", 
-                  letterSpacing: "0.5px",
-                  fontWeight: "600"
-                }}>
-                  {log.type}
+      {chatLog.map((log, index) => {
+          const isUser = log.type === "user";
+          const rowClass = isUser ? "user" : "bot";
+          
+          return (
+            // Re-added the message-row wrapper to fix left/right alignment
+            <div key={index} className={`message-row ${rowClass}`}>
+              <div className="message-content-wrapper">
+                              
+                {/* Message Bubble */}
+                <div className="message-bubble">
+                  {/* Labels completely removed, rendering only the text */}
+                  <div className={`message-text ${log.type === "error" ? "error" : "normal"}`}>
+                    {log.content}
+                  </div>
                 </div>
-              )}
-
-              <div style={{ 
-                color: log.type === "error" ? "#d93025" : "var(--text-main)",
-                lineHeight: "1.6",
-                fontSize: "0.95em",
-                whiteSpace: "pre-wrap" 
-              }}>
-                {log.content}
+                
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Adjusted Padding to match Chat Area */}
-      <div style={{ 
-        padding: "20px 40px", 
-        backgroundColor: "var(--bg-main)"
-      }}>
-        <div style={{
-          display: "flex", 
-          alignItems: "center",
-          gap: "10px",
-          backgroundColor: "#f1f3f4", 
-          borderRadius: "24px",
-          padding: "8px 16px",
-          border: "1px solid transparent",
-          transition: "border-color 0.2s, box-shadow 0.2s"
-        }}
-        onFocus={(e) => e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)"}
-        onBlur={(e) => e.currentTarget.style.boxShadow = "none"}
-        >
-        <input 
+      {/* Input Area */}
+      <div className="input-area">
+        <div className="input-wrapper">
+          <input 
             type="text" 
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder={isConnected ? "Message Mainframe..." : "Connecting..."}
             disabled={!isConnected}
-            style={{ 
-              flex: 1, 
-              border: "none", 
-              outline: "none", 
-              backgroundColor: "transparent", 
-              color: "var(--text-muted)",
-              fontSize: "0.95em",
-              fontWeight: "300", 
-              fontFamily: "inherit",
-              padding: "8px 0"
-            }}
+            className="chat-input"
           />
           <button 
             onClick={sendMessage} 
             disabled={!isConnected || !userInput.trim()}
-            style={{ 
-              background: "transparent",
-              border: "none",
-              cursor: (!isConnected || !userInput.trim()) ? "default" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "4px",
-              color: (!isConnected || !userInput.trim()) ? "#9aa0a6" : "#1a73e8",
-              transition: "color 0.2s"
-            }}
+            className="send-button"
             title="Send message"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -393,5 +278,5 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
         </div>
       </div>
     </div>
-  )
+  );
 }
