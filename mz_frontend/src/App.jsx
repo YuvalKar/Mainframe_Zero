@@ -7,6 +7,23 @@ import DocumentViewer from './components/DocumentViewer'
 import FloatingLog from './components/FloatingLog'
 import StaticHud from './components/StaticHud'
 
+// --- Icons for the Tool Tabs ---
+const ExplorerIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const ViewerIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+    <line x1="16" y1="13" x2="8" y2="13"></line>
+    <line x1="16" y1="17" x2="8" y2="17"></line>
+    <polyline points="10 9 9 9 8 9"></polyline>
+  </svg>
+);
+
 function App() {
   // --- Global App State ---
   const [appColor, setAppColor] = useState("#4da8da"); 
@@ -22,24 +39,17 @@ function App() {
   // --- WebSocket & System Logs State ---
   const [systemLogs, setSystemLogs] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  
-  // NEW: Queue system to prevent React batching from swallowing rapid messages
   const [messageQueue, setMessageQueue] = useState([]);
   const [latestMessage, setLatestMessage] = useState(null);
-  
   const wsRef = useRef(null);
 
   // Process the message queue one by one
   useEffect(() => {
     if (messageQueue.length > 0) {
-      // 1. Give the current message to the children
       setLatestMessage(messageQueue[0]);
-      
-      // 2. Clear it from the queue after a tiny delay so React has time to render
       const timer = setTimeout(() => {
         setMessageQueue(prev => prev.slice(1));
       }, 50);
-      
       return () => clearTimeout(timer);
     }
   }, [messageQueue]);
@@ -54,13 +64,8 @@ function App() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
-        // Add EVERY incoming message to the logs immediately
         setSystemLogs(prevLogs => [...prevLogs, data]);
-        
-        // Push to queue instead of overwriting latestMessage directly
         setMessageQueue(prev => [...prev, data]);
-
       } catch (err) {
         console.error("Error parsing WebSocket message:", err);
       }
@@ -76,24 +81,19 @@ function App() {
   // Helper function to send commands via WebSocket
   const sendCommand = (payload) => {
     if (wsRef.current && isConnected) {
-      
-      // Enhance the payload with our current UI context
       const enhancedPayload = {
         ...payload,
         client_context: {
           activeDocument: activeDocument ? activeDocument.path : null,
           selectedText: selectedText || null,
-          // Extract only the paths, and filter out the active document to avoid duplication
           attentionShelf: attentionShelf
             .filter(f => !activeDocument || f.path !== activeDocument.path)
             .map(f => f.path)
         }
       };
 
-      // Add to our floating log so we can see what we ACTUALLY sent
       const outgoingMsg = { type: 'user_command', content: enhancedPayload };
       setSystemLogs(prevLogs => [...prevLogs, outgoingMsg]);
-      
       wsRef.current.send(JSON.stringify(enhancedPayload));
     }
   };
@@ -135,19 +135,21 @@ function App() {
       {/* Right Column: Dynamic Tools Panel */}
       <div className="right-panel" style={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
         
-        {/* Tool Selection Tabs */}
+        {/* Tool Selection Tabs with SVG Icons */}
         <div className="tools-tabs">
           <button 
             className={`tab-btn ${activeToolTab === 'explorer' ? 'active' : ''}`}
             onClick={() => setActiveToolTab('explorer')}
+            title="File Explorer"
           >
-            File Explorer
+            <ExplorerIcon />
           </button>
           <button 
             className={`tab-btn ${activeToolTab === 'viewer' ? 'active' : ''}`}
             onClick={() => setActiveToolTab('viewer')}
+            title="Doc Viewer"
           >
-            Doc Viewer
+            <ViewerIcon />
           </button>
         </div>
 
