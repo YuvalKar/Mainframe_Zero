@@ -60,6 +60,7 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt = ""
     session_id = session_context.get("session_id")
     
+    ################################# TBD - Just for testing, move to UI or HUD later
     from core_utils.hud_streamer import send_hud_timer, send_hud_text
     send_hud_timer("Prompting", len(user_input), "Loading")
     send_hud_text("User say", user_input)
