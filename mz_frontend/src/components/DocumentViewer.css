@@ -25,15 +25,13 @@
 }
 
 .document-viewer-header {
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-  font-weight: 500;
-  color: #d4d4d4;
-  font-size: 0.85em;
+  padding: 8px;
+  color: #858585;
+  margin: 4px 0 4px 10px;
+  font-size: 0.75em;
+  letter-spacing: 1px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  /* Very thin, clean separation line */
-  border-bottom: 1px solid #3e3e42; 
 }
 
 .document-viewer-content {
