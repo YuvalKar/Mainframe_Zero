@@ -51,26 +51,56 @@ const GaugeWidget = ({ data, defaultColor }) => {
 };
 
 // --- New Worker Widget ---
-// Behaving like a Gauge for now until customized
+// Narrow and tall vertical gauge testing
 const WorkerWidget = ({ data, defaultColor }) => {
   const val = typeof data?.value === 'number' ? data.value : 0;
-  const label = data?.label || 'WORKER';
+  // Use a shorter default label because 50px is very narrow
+  const label = data?.label || 'WRK'; 
 
   return (
-    <div className="hud-widget-wrapper" style={{ color: defaultColor, minHeight: '50px' }}>
+    <div className="hud-widget-wrapper" style={{ 
+      color: defaultColor, 
+      width: '70px', 
+      height: '120px', 
+      display: 'inline-block', // Acts like float: left
+      marginRight: '10px' // Space between workers
+    }}>
       <PlaceholderBg color={defaultColor} />
-      <div className="hud-widget-content">
-        <div className="hud-text-truncate" style={{ marginBottom: '4px', fontSize: '12px' }}>
-          {label}: {val}%
+      
+      <div className="hud-widget-content" style={{ 
+        alignItems: 'center', 
+        padding: '8px 4px' 
+      }}>
+        <div className="hud-text-truncate" style={{ marginBottom: '8px', fontSize: '10px', textAlign: 'center' }}>
+          {label}
         </div>
-        <div style={{ background: 'rgba(0,0,0,0.5)', width: '100%', height: '8px', overflow: 'hidden' }}>
-          <div style={{ background: defaultColor, width: `${val}%`, height: '100%' }} />
+        
+        {/* Vertical gauge container */}
+        <div style={{ 
+          background: 'rgba(0,0,0,0.5)', 
+          width: '12px', 
+          flexGrow: 1, // Take up the remaining height 
+          display: 'flex',
+          alignItems: 'flex-end', // Fill from bottom to top
+          overflow: 'hidden' 
+        }}>
+          {/* The actual color fill */}
+          <div style={{ 
+            background: defaultColor, 
+            width: '100%', 
+            height: `${val}%` 
+          }} />
+        </div>
+        
+        <div style={{ marginTop: '8px', fontSize: '10px' }}>
+          {val}%
         </div>
       </div>
     </div>
   );
 };
 
+// --- Circular Timer Widget ---
 const TimerWidget = ({ data, onRemove, defaultColor }) => {
   const label = data?.label || "TASK";
   const [timeLeft, setTimeLeft] = useState(data?.value || 5);
@@ -93,11 +123,50 @@ const TimerWidget = ({ data, onRemove, defaultColor }) => {
   }, [timeLeft, onRemove]);
 
   return (
-    <div className="hud-widget-wrapper" style={{ color: defaultColor }}>
+    <div className="hud-widget-wrapper" style={{ 
+      color: defaultColor, 
+      width: '80px', 
+      height: '100px', 
+      display: 'inline-block' 
+    }}>
       <PlaceholderBg color={defaultColor} />
-      <div className="hud-widget-content" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span className="hud-text-truncate" style={{ paddingRight: '10px' }}>{label}</span>
-        <strong>{timeLeft}s</strong>
+      
+      <div className="hud-widget-content" style={{ alignItems: 'center', padding: '8px' }}>
+        
+        {/* The circular wrapper to center the number and the SVG */}
+        <div style={{ 
+          position: 'relative', 
+          width: '50px', 
+          height: '50px', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          {/* The spinning SVG ring */}
+          <svg 
+            viewBox="0 0 50 50" 
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            className="hud-spin-slow" /* Using your existing slow spin animation */
+          >
+            <circle 
+              cx="25" cy="25" r="20" 
+              fill="none" 
+              stroke={defaultColor} 
+              strokeWidth="2" 
+              strokeDasharray="10 5" /* Makes the circle dashed so we can see it spin */
+            />
+          </svg>
+          
+          {/* The number in the middle */}
+          <strong style={{ fontSize: '14px', zIndex: 1 }}>{timeLeft}</strong>
+        </div>
+
+        {/* The label below the circle */}
+        <span className="hud-text-truncate" style={{ fontSize: '10px', textAlign: 'center' }}>
+          {label}
+        </span>
+
       </div>
     </div>
   );
@@ -198,7 +267,6 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
         
         {/* Top Left Anchor - Displaying Timers widgets */}
         <div className="hud-anchor-zone zone-top-left">
-           <div style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>TOP LEFT ZONE (Timers)</div>
            {timerEntities.map(([id, entity]) => (
              <TimerWidget key={id} data={entity.payload} onRemove={() => removeEntity(id)} defaultColor={appColor} />
            ))}
@@ -206,7 +274,6 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
 
         {/* Top Right Anchor - Displaying Workers widgets */}
         <div className="hud-anchor-zone zone-top-right">
-           <div style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>TOP RIGHT ZONE (Workers)</div>
            {workerEntities.map(([id, entity]) => (
              <WorkerWidget key={id} data={entity.payload} defaultColor={appColor} />
            ))}
@@ -214,7 +281,6 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
 
         {/* Left Anchor - Displaying ERROR widgets */}
         <div className="hud-anchor-zone zone-error">
-           <div style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>LEFT ZONE (ERRORS)</div>
            {errorEntities.map(([id, entity]) => (
              <ErrorWidget key={id} data={entity.payload} />
            ))}
@@ -222,7 +288,6 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
 
         {/* Mid Anchor - Displaying text widgets */}
         <div className="hud-anchor-zone zone-mid">
-           <div style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>MID ZONE (TEXT)</div>
            {textEntities.map(([id, entity]) => (
              <TextWidget key={id} data={entity.payload} level={entity.level} defaultColor={appColor} />
            ))}
@@ -230,7 +295,6 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
 
         {/* Bottom Anchor - Displaying GAUGE widgets */}
         <div className="hud-anchor-zone zone-bottom">
-           <div style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>BOTTOM ZONE (GAUGES)</div>
            {gaugeEntities.map(([id, entity]) => (
              <GaugeWidget key={id} data={entity.payload} defaultColor={appColor} />
            ))}

@@ -80,9 +80,10 @@
 /* Base class for any anchor zone */
 .hud-anchor-zone {
   position: absolute;
-  /* Ugly, bright border just for debugging so we don't miss it */
+  /* Ugly, bright border just for debugging so we don't miss it 
   border: 2px dashed #ff00ff; 
   background-color: rgba(255, 0, 255, 0.1);
+  */
   padding: 15px;
   /* Flexbox will automatically stack widgets vertically with a gap */
   display: flex;
@@ -98,6 +99,8 @@
   left: 40%;
   width: 400px;
   height: 120px;
+  flex-direction: row; 
+  flex-wrap: wrap;  
 }
 
 .zone-top-right {
@@ -105,6 +108,11 @@
   right: 1%;
   width: 400px;
   height: 120px;
+
+  /* Override the default column behavior to arrange children side-by-side */
+  flex-direction: row; 
+  /* Allow widgets to wrap to a new line if there are too many for the width */
+  flex-wrap: wrap;  
 }
 
 .zone-mid {
