@@ -19,7 +19,7 @@ from time import sleep
 # Import the helper functions from your HUD streamer module
 # Adjust the import path if needed (e.g., from core_utils.hud_streamer import ...)
 from core_utils.hud_streamer import (
-    send_hud_text, send_hud_gauge, 
+    send_hud_text, send_hud_gauge, send_hud_worker,
     send_hud_timer, send_hud_error, remove_hud_widget
 )
 
@@ -71,6 +71,14 @@ def run_hud_test_sequence():
     send_hud_error("ERR_001", "ERR Connection to Mainframe Zero lost", code=503)
     sleep(0.4)
     send_hud_error("ERR_002", "ERR Authentication failure", code=401)
+    sleep(0.4)
+
+    # 5. WORKER Widgets
+    send_hud_worker("WORKER_001", 75, label="WORKER Data Processing")
+    sleep(0.4)
+    send_hud_worker("WORKER_002", 75, label="WORKER Data eating")
+    sleep(0.4)
+    send_hud_worker("WORKER_003", 0, label="WORKER Data cleaning")
     sleep(0.4)
 
     # 5. REMOVE Widgets

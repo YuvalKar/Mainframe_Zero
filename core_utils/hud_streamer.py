@@ -109,6 +109,16 @@ def send_hud_error(element_id: str, error_message: str, code: Optional[int] = No
         payload={"value": error_message, "code": code}
     )
 
+def send_hud_worker(element_id: str, percentage: int, label: str = "WORKER"):
+    """Sends or updates a worker status widget (0-100)."""
+    send_hud_message(
+        element_id=element_id, 
+        action="upsert", 
+        widget_type="WORKER", 
+        level="info", 
+        payload={"value": percentage, "label": label}
+    )
+    
 def remove_hud_widget(element_id: str):
     """Explicitly removes a widget from the screen by its ID."""
     send_hud_message(
