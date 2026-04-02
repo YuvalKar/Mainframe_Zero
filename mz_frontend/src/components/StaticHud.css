@@ -16,14 +16,14 @@
 .hud-spin-slow {
   /* Set origin to 0 0 because the parent <g> is translated to the correct position */
   transform-origin: 0 0;
-  animation: hud-flow-40 40s linear infinite;
+  animation: hud-flow-40 30s linear infinite;
   opacity: 0.4;
 }
 
 .hud-spin-fast-reverse {
   transform-origin: 0 0;
-  animation: hud-flow-48-reverse 20s linear infinite;
-  opacity: 0.4;
+  animation: hud-flow-48-reverse 10s linear infinite;
+  opacity: 0.2;
 }
 /* Moving the line forward */
 @keyframes hud-flow-40 {

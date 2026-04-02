@@ -62,8 +62,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     session_id = session_context.get("session_id")
     
     ################################# TBD - Just for testing, move to UI or HUD later
-    # test_timer_seconds = min(len(user_input), 10) + 5
-    # send_hud_timer("PROMPT_TIMER", test_timer_seconds, "Loading")
+    test_timer_seconds = min(len(user_input), 10) + 5
+    send_hud_timer("PROMPT_TIMER", test_timer_seconds, "Loading")
     send_hud_text("USER_SAY", user_input)
 
     # 1. Fetch Recent History
