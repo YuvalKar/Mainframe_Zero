@@ -94,7 +94,7 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
           <Editor
             height="100%"
             language={getLanguage(activeDocument.name)}
-            theme="light" // Monaco's light theme fits the grayscale aesthetic well
+            theme="vs-dark" // Switched to Monaco's dark theme
             value={fileContent}
             onMount={handleEditorDidMount}
             options={{

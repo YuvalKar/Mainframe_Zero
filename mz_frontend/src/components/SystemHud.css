@@ -10,23 +10,23 @@
     width: 600px;
     max-height: 450px;
     
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(30, 30, 30, 0.85); /* Dark background */
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     
     /* FUI Heavy Geometry Borders */
     border-radius: 0px; 
-    border: 2px solid #000000;
+    border: 2px solid #555555; /* Dark gray border */
     
     /* Hard blocky shadow for a hardware feel */
-    box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.05); 
+    box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.5); /* Darker shadow */
     
     display: flex;
     flex-direction: column;
     z-index: 9999; 
     
     font-family: 'Courier New', Courier, monospace;
-    color: #000000; 
+    color: #d4d4d4; /* Light text */
     
     /* We need overflow visible to allow outer FUI decorations, 
        but we will handle scroll inside the logs container */
@@ -45,8 +45,8 @@
     height: 6px;
     background: repeating-linear-gradient(
         -45deg,
-        #000,
-        #000 2px,
+        #555555,
+        #555555 2px,
         transparent 2px,
         transparent 5px
     );
@@ -59,9 +59,9 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    background-color: #000000; /* Black header block */
+    background-color: #111111; /* Very dark header block */
     color: #ffffff; /* White text */
-    border-bottom: 4px solid #cccccc; /* Thick separator */
+    border-bottom: 4px solid #555555; /* Thick separator */
 }
 
 .hud-title {
@@ -75,8 +75,8 @@
 .hud-status-indicator {
     width: 10px;
     height: 10px;
-    background-color: #ffffff; 
-    border: 1px solid #000;
+    background-color: #d4d4d4; 
+    border: 1px solid #111;
 }
 
 .pulse {
@@ -102,11 +102,11 @@
 /* Scrollbar styling */
 .hud-logs-container::-webkit-scrollbar {
     width: 6px;
-    background-color: #f0f0f0;
-    border-left: 1px solid #ccc;
+    background-color: #2a2a2a;
+    border-left: 1px solid #444;
 }
 .hud-logs-container::-webkit-scrollbar-thumb {
-    background-color: #000000; 
+    background-color: #666666; 
 }
 
 /* Individual log entry */
@@ -121,11 +121,11 @@
 .log-type {
     margin-right: 8px;
     font-weight: bold;
-    color: #000000;
+    color: #ffffff;
 }
 
 .log-message {
-    color: #333333; 
+    color: #a0a0a0; 
 }
 
 /* ####################### */
@@ -147,13 +147,13 @@
     position: fixed;
     padding: 15px 20px;
     
-    background-color: rgba(255, 255, 255, 0.75); 
+    background-color: rgba(30, 30, 30, 0.85); 
     backdrop-filter: blur(4px);
     
     /* FUI Heavy geometric borders */
-    border-bottom: 1px solid #000000; /* Heavy top bar */
+    border-bottom: 1px solid #555555; /* Heavy top bar */
     
-    color: #000000; 
+    color: #d4d4d4; 
     font-family: 'Courier New', Courier, monospace;
     min-width: 140px;
     max-width: 300px;  
@@ -165,7 +165,7 @@
 .hud-entity-id {
     font-size: 10px;
     font-weight: bold;
-    background-color: #000000;
+    background-color: #555555;
     color: #ffffff;
     padding: 2px 6px;
     display: inline-block;
@@ -194,13 +194,13 @@
 
 .fui-gauge-track {
     height: 8px;
-    border: 1px solid #000000;
+    border: 1px solid #888888;
     padding: 1px; /* Creates a gap between border and fill */
 }
 
 .fui-gauge-fill {
     height: 100%;
-    background-color: #000000; 
+    background-color: #888888; 
 }
 
 /* --- NAKED HOLOGRAM OVERRIDE --- */
@@ -235,8 +235,8 @@
     animation: rotate-clockwise 30s linear infinite;
     pointer-events: none;
     
-    /* Makes the SVG dark gray, with a glowing white aura behind it */
-    filter: invert(0.8) drop-shadow(0 0 8px rgba(255, 255, 255, 1)); 
+    /* Kept the invert but reduced the brightness of the glow slightly to match dark mode */
+    filter: invert(0.8) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5)); 
 }
 
 .hologram-content {
@@ -245,8 +245,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #222222; 
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); 
+    color: #e0e0e0; 
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.9); 
     font-family: 'Courier New', Courier, monospace;
 }
 
@@ -273,8 +273,8 @@
     /* Make it a precise structural size, not a giant background */
     width: 200px;   
     
-    /* Pure black, sharp and solid */
-    color: #000000;
+    /* Dark gray instead of pure black for dark mode */
+    color: #555555;
     opacity: 1; /* NO TRANSPARENCY! */
     
     /* Put it above the window border so it looks like it's holding it */

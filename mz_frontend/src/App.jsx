@@ -135,7 +135,7 @@ function App() {
             style={toggleButtonStyle} 
             onClick={() => setIsLeftOpen(!isLeftOpen)}
             title={isLeftOpen ? "Collapse Explorer" : "Expand Explorer"}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             {isLeftOpen ? '◀' : '▶'}
@@ -181,7 +181,7 @@ function App() {
             style={toggleButtonStyle} 
             onClick={() => setIsRightOpen(!isRightOpen)}
             title={isRightOpen ? "Collapse Viewer" : "Expand Viewer"}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             {isRightOpen ? '▶' : '◀'}

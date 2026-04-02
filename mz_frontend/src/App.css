@@ -1,12 +1,12 @@
 /* src/App.css */
 
-/* Define our clean, light theme variables */
+/* Define our clean, dark theme variables */
 :root {
-  --bg-main: #ffffff;
-  --bg-sidebar: #f8f9fa; /* Very soft gray for side panels */
-  --border-color: #e0e0e0;
-  --text-main: #202124;
-  --text-muted: #5f6368;
+  --bg-main: #1e1e1e; /* Main dark background */
+  --bg-sidebar: #252526; /* Slightly lighter for panels */
+  --border-color: #3e3e42; /* Subtle dark borders */
+  --text-main: #d4d4d4; /* Soft white/gray text */
+  --text-muted: #858585; /* Dimmed text for secondary info */
   --font-delicate: 'Inter', 'Segoe UI', Roboto, Helvetica, sans-serif;
   --transition-speed: 0.3s;
 }
@@ -18,6 +18,31 @@ body {
   background-color: var(--bg-main);
   color: var(--text-main);
   font-weight: 300; /* Delicate font weight */
+}
+
+/* --- Global Dark Mode Scrollbars --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1); 
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color); /* Matches the dark UI borders */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555555; /* Slightly lighter gray when hovered */
+}
+
+/* Firefox support for scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) rgba(0, 0, 0, 0.1);
 }
 
 /* Main application layout wrapper */
