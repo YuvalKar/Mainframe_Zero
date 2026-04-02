@@ -21,7 +21,7 @@ const BotIcon = () => (
   </svg>
 );
 
-export default function Terminal({ attentionShelf, setAttentionShelf, sendCommand, latestMessage, isConnected }) {
+export default function Terminal({ attentionShelf, setAttentionShelf, sendCommand, latestMessage, isConnected, setAppColor }) {
   const [chatLog, setChatLog] = useState([]);
   const [userInput, setUserInput] = useState("");
 
@@ -102,6 +102,18 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
       }
     }
   }, [latestMessage]);
+
+  // Update the global app color whenever the active app changes
+  useEffect(() => {
+    if (setAppColor && activeApp && installedApps[activeApp]) {
+      const color = installedApps[activeApp].hud_color;
+      if (color) {
+        setAppColor(color);
+      } else {
+        setAppColor("#4da8da"); // Default fallback
+      }
+    }
+  }, [activeApp, installedApps, setAppColor]);
 
   const handleModelChange = (e) => {
     const newModel = e.target.value;

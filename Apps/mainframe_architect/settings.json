@@ -1,5 +1,7 @@
 {
     "display_name": "nBaya",
     "description": "An app for designing and managing the nBaya system architecture.",
-    "version": "0.0.0"
+    "version": "0.0.0",
+    "icon": "nBaya_logo_n.svg",
+    "hud_color": "#4fa72e"
 }

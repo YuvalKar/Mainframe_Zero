@@ -2,6 +2,7 @@
     "display_name": "Blender",
     "description": "An app for integrating with Blender.",
     "icon": "Blender_logo.svg",
+    "hud_color": "#F5792A",
     "semantics": ["blender", "mz_blender"],
     "version": "0.1.0",
 

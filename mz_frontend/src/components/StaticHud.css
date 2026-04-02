@@ -1,0 +1,54 @@
+/* src/components/StaticHud.css */
+
+.static-hud-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* CRITICAL: ensures clicks pass through the SVG to the app below */
+  pointer-events: none; 
+  /* Float above the app, but stay under the FloatingLog (which is 9999) */
+  z-index: 9998; 
+}
+
+/* Animations for the right-side decoration */
+.hud-spin-slow {
+  /* Set origin to 0 0 because the parent <g> is translated to the correct position */
+  transform-origin: 0 0;
+  animation: hud-spin 20s linear infinite;
+}
+
+.hud-spin-fast-reverse {
+  transform-origin: 0 0;
+  animation: hud-spin-reverse 10s linear infinite;
+}
+
+/* Animations for left-side indicators */
+.hud-blink {
+  animation: hud-blink 1.5s infinite;
+}
+
+.hud-pulse {
+  transform-origin: 0 0;
+  animation: hud-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hud-spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes hud-spin-reverse {
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes hud-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
+}
+
+@keyframes hud-pulse {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  50% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.4; }
+}

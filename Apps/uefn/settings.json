@@ -3,8 +3,7 @@
     "description": "An app for integrating with UEFN Editor.",
     "icon": "unreal.svg",
     "version": "0.0.0",
-
-
+    "hud_color": "#00AEEF",
     "project": {
         "name": "Get_Nuts",
         "path": "C:\\Users\\yuval\\Documents\\Fortnite Projects\\Get_Nuts"

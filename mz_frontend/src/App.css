@@ -54,54 +54,57 @@ body {
   overflow: hidden;
 }
 
-/* Shared styles for all columns */
-.column-panel {
-  transition: width var(--transition-speed) ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-/* Specific column styling */
+/* --- Left Column: AI Terminal --- */
 .left-column {
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
+  height: 100%;
 }
 
-.center-column {
+/* --- Right Panel: Dynamic Tools --- */
+.right-panel {
   background-color: var(--bg-main);
+  height: 100%;
 }
 
-.right-column {
+/* --- Tabs Navigation --- */
+.tools-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-sidebar);
-  border-left: 1px solid var(--border-color);
-  overflow: hidden; /* Hide content when collapsed */
 }
 
-/* Toggle buttons styling */
-.toggle-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px; /* Default for left panel */
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 12px 0;
   cursor: pointer;
-  z-index: 10;
-  padding: 2px 6px;
-  color: var(--text-muted);
+  font-family: var(--font-delicate);
+  font-size: 0.85em;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all var(--transition-speed) ease;
+  border-bottom: 2px solid transparent;
 }
 
-/* Adjust toggle button for right panel */
-.right-column .toggle-btn {
-  left: 10px;
-  right: auto;
+.tab-btn:hover {
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* Placeholder for the new widget area */
-.widget-placeholder {
-  padding: 40px 20px;
-  color: var(--text-muted);
-  text-align: center;
+.tab-btn.active {
+  color: var(--text-main);
+  border-bottom: 2px solid #858585; 
+  font-weight: 500;
+}
+
+/* --- Tab Content Area --- */
+.tools-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
 }
