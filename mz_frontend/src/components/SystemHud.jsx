@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './SystemHud.css'; 
 import { useDraggable } from '../hooks/useDraggable';
+import { CornerGraphic } from './hud-graphics';
 
 const hologramModules = import.meta.glob('../assets/holograms/*.svg', { 
   eager: true, 
@@ -139,11 +140,13 @@ const SystemHud = ({ systemLogs = [] }) => {
       >
         {Object.entries(entities).map(([id, entity]) => {
           const WidgetComponent = WIDGETS[entity.type] || TextWidget;
+          const isTimer = entity.type === 'TIMER'; // Check if it's the naked hologram
+          
           return (
             <div 
               key={id} 
               id={`hud-entity-${id}`}
-              className={`hud-entity ${entity.type === 'TIMER' ? 'hologram-naked' : ''}`} 
+              className={`hud-entity ${isTimer ? 'hologram-naked' : ''}`} 
               style={{
                 position: 'fixed',
                 top: '-1000px',
@@ -151,7 +154,10 @@ const SystemHud = ({ systemLogs = [] }) => {
                 pointerEvents: isVisible ? 'auto' : 'none', 
               }}
             >
-              {entity.type !== 'TIMER' && <div className="hud-entity-id">ID:{id}</div>}
+              {/* --- ADDED GRAPHIC HERE: Render only if it's not a naked timer --- */}
+              {!isTimer && <CornerGraphic className="fui-widget-corner" />}
+
+              {!isTimer && <div className="hud-entity-id">ID:{id}</div>}
               <WidgetComponent 
                 data={entity.value} 
                 onRemove={() => removeEntity(id)} 
@@ -172,6 +178,8 @@ const SystemHud = ({ systemLogs = [] }) => {
           visibility: isVisible ? 'visible' : 'hidden',
         }}
       >
+        {/* <CornerGraphic className="hud-overlay-graphic" /> */}
+
         <div className="hud-header">
           <span className="hud-title">SYS.SUBCONSCIOUS</span>
           <div className="hud-status-indicator pulse"></div>

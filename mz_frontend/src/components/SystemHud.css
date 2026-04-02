@@ -147,41 +147,19 @@
     position: fixed;
     padding: 15px 20px;
     
-    background-color: rgba(255, 255, 255, 0.95); 
+    background-color: rgba(255, 255, 255, 0.75); 
     backdrop-filter: blur(4px);
     
     /* FUI Heavy geometric borders */
-    border: 2px solid #000000;
-    border-top: 8px solid #000000; /* Heavy top bar */
+    border-bottom: 1px solid #000000; /* Heavy top bar */
     
     color: #000000; 
     font-family: 'Courier New', Courier, monospace;
-    min-width: 140px; 
+    min-width: 140px;
+    max-width: 300px;  
     
-    /* Hard blocky shadow */
-    box-shadow: 6px 6px 0px rgba(0,0,0,0.08);
 }
 
-/* Thick L-Bracket Bottom Right */
-.hud-entity::before {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 30px;
-    height: 6px;
-    background-color: #000000;
-}
-
-.hud-entity::after {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 6px;
-    height: 30px;
-    background-color: #000000;
-}
 
 /* Sci-fi ID Label */
 .hud-entity-id {
@@ -279,4 +257,33 @@
 @keyframes rotate-clockwise {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* #################################*/
+
+/* Styling the SVG graphic as a SOLID structural FUI corner */
+.fui-widget-corner {
+    position: absolute;
+    
+    /* Since your PowerPoint canvas had empty space around the drawing, 
+       we use negative values to pull the actual shape exactly to the corner */
+    bottom: -55px; 
+    left: -40px;   
+    
+    /* Make it a precise structural size, not a giant background */
+    width: 200px;   
+    
+    /* Pure black, sharp and solid */
+    color: #000000;
+    opacity: 1; /* NO TRANSPARENCY! */
+    
+    /* Put it above the window border so it looks like it's holding it */
+    z-index: 10; 
+    pointer-events: none;
+}
+
+/* Ensure header and logs stay above the background graphic */
+.hud-header, .hud-logs-container {
+    position: relative;
+    z-index: 2;
 }
