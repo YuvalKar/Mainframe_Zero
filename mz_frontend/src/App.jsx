@@ -117,7 +117,7 @@ function App() {
     <div className="app-container">
       
       {/* HUD Layers */}
-      <StaticHud appColor={appColor} />
+      <StaticHud appColor={appColor} latestMessage={latestMessage} />
       <FloatingLog systemLogs={systemLogs} />
 
       {/* Left Column: AI Terminal */}

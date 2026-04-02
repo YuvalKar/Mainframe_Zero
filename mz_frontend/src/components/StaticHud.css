@@ -16,12 +16,27 @@
 .hud-spin-slow {
   /* Set origin to 0 0 because the parent <g> is translated to the correct position */
   transform-origin: 0 0;
-  animation: hud-spin 20s linear infinite;
+  animation: hud-flow-40 40s linear infinite;
+  opacity: 0.4;
 }
 
 .hud-spin-fast-reverse {
   transform-origin: 0 0;
-  animation: hud-spin-reverse 10s linear infinite;
+  animation: hud-flow-48-reverse 20s linear infinite;
+  opacity: 0.4;
+}
+/* Moving the line forward */
+@keyframes hud-flow-40 {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* Moving the line backward */
+@keyframes hud-flow-48-reverse {
+  to {
+    stroke-dashoffset: 48;
+  }
 }
 
 /* Animations for left-side indicators */

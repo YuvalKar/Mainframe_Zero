@@ -193,8 +193,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 fallback_payload = {"action": "chat", "content": raw_input}
                 await handle_chat(fallback_payload, websocket, stream_to_frontend)
                 
-    except WebSocketDisconnect:
-        print("[Server] Client disconnected.")
+    # Catch both standard disconnects and the confusing Starlette RuntimeError
+    except (WebSocketDisconnect, RuntimeError):
+        print("[Server] Client disconnected (or hot-reloaded).")
+        
     finally:
         # 3. CRITICAL: Unsubscribe when the user leaves
         hud_bus.unsubscribe(forward_to_hud)

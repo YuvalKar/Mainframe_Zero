@@ -3,6 +3,7 @@ import re
 
 # Import utility functions
 from core_utils.actions_ops import get_available_actions
+from core_utils.hud_streamer import send_hud_timer, send_hud_text
 
 # Import updated attention ops
 from core_utils.attention_ops import update_session_attention
@@ -61,10 +62,9 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     session_id = session_context.get("session_id")
     
     ################################# TBD - Just for testing, move to UI or HUD later
-    from core_utils.hud_streamer import send_hud_timer, send_hud_text
-    send_hud_timer("Prompting", len(user_input), "Loading")
-    send_hud_text("User say", user_input)
-
+    # test_timer_seconds = min(len(user_input), 10) + 5
+    # send_hud_timer("PROMPT_TIMER", test_timer_seconds, "Loading")
+    send_hud_text("USER_SAY", user_input)
 
     # 1. Fetch Recent History
     history = get_recent_chat_history(session_id, limit=5)
