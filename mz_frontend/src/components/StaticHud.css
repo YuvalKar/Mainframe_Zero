@@ -67,3 +67,54 @@
   50% { transform: scale(1.5); opacity: 1; }
   100% { transform: scale(0.8); opacity: 0.4; }
 }
+
+/* ----------------------- */
+/* Container for all anchor zones. Stretches over the whole screen */
+.hud-anchors-container {
+  position: absolute;
+  /* inset: 0 is a shortcut for top: 0, right: 0, bottom: 0, left: 0 */
+  inset: 0; 
+  pointer-events: none;
+}
+
+/* Base class for any anchor zone */
+.hud-anchor-zone {
+  position: absolute;
+  /* Ugly, bright border just for debugging so we don't miss it */
+  border: 2px dashed #ff00ff; 
+  background-color: rgba(255, 0, 255, 0.1);
+  padding: 15px;
+  /* Flexbox will automatically stack widgets vertically with a gap */
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+}
+
+/* Specific Anchor: Top Right */
+.zone-top-left {
+  top: 60px;
+  left: 40%;
+  width: 400px;
+  height: 120px;
+}
+
+.zone-top-right {
+  top: 60px;
+  right: 1%;
+  width: 400px;
+  height: 120px;
+}
+
+.zone-mid {
+  top: 230px;
+  left: 52%;
+  width: 40%; 
+  height: 40vh;
+}
+
+.zone-bottom {
+  bottom: 10px;
+  right: 1%;
+  width: 40%; 
+  height: 20vh;
+}

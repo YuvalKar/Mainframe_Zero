@@ -61,11 +61,6 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt = ""
     session_id = session_context.get("session_id")
     
-    ################################# TBD - Just for testing, move to UI or HUD later
-    test_timer_seconds = min(len(user_input), 10) + 5
-    send_hud_timer("PROMPT_TIMER", test_timer_seconds, "Loading")
-    send_hud_text("USER_SAY", user_input)
-
     # 1. Fetch Recent History
     history = get_recent_chat_history(session_id, limit=5)
     if history:

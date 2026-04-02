@@ -141,7 +141,35 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
   return (
     <div className="static-hud-overlay">
       
-      {/* --- HTML DATA LAYER (Overlay) --- */}
+      {/* Container holding all our anchor zones */}
+      <div className="hud-anchors-container">
+        
+        {/* Top Anchors */}
+        <div className="hud-anchor-zone zone-top-left">
+           <div style={{ color: 'white', fontWeight: 'bold' }}>TOP LEFT ZONE</div>
+           {/* We will map the active widgets here in the next step */}
+        </div>
+
+        <div className="hud-anchor-zone zone-top-right">
+           <div style={{ color: 'white', fontWeight: 'bold' }}>TOP RIGHT ZONE</div>
+           {/* We will map the active widgets here in the next step */}
+        </div>        
+
+        {/* Mid Anchor */}
+        <div className="hud-anchor-zone zone-mid">
+           <div style={{ color: 'white', fontWeight: 'bold' }}>MID ZONE</div>
+           {/* The large SVG will go here later */}
+        </div>
+
+        {/* Bottom Anchor */}
+        <div className="hud-anchor-zone zone-bottom">
+           <div style={{ color: 'white', fontWeight: 'bold' }}>BOTTOM ZONE</div>
+           {/* The large SVG will go here later */}
+        </div>
+
+      </div>
+
+
       {/* Placed top-right for initial testing */}
       <div 
         className="hud-data-layer" 
@@ -225,12 +253,10 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
         </svg>
       </div>  
 
-      {/* --- SVG DECORATION LAYER --- */}
+      {/* --- Top connection indicator --- */}
       <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', zIndex: 1, pointerEvents: 'none' }}>
-        
-        {/* RIGHT SIDE: Fake Static Indicators (We'll replace these later) */}
         <g className="hud-right-group" stroke={appColor} fill="none">
-          {/* Blinking blocks shifted left */}
+          {/* Blinking blocks */}
           <rect x="calc( 155px)" y="24" width="15" height="15" fill={appColor} className="hud-blink" stroke="none" />
           <rect x="calc( 135px)" y="24" width="15" height="15" fill="#4fa72e" stroke="none" />
           <rect x="calc( 115px)" y="24" width="15" height="15" fill="#4fa72e" opacity="0.3" stroke="none" />
