@@ -101,6 +101,7 @@ const WorkerWidget = ({ data, defaultColor }) => {
 };
 
 // --- Circular Timer Widget ---
+// --- Circular Timer Widget (Optimized with external SVG) ---
 const TimerWidget = ({ data, onRemove, defaultColor }) => {
   const label = data?.label || "TASK";
   const [timeLeft, setTimeLeft] = useState(data?.value || 5);
@@ -133,7 +134,7 @@ const TimerWidget = ({ data, onRemove, defaultColor }) => {
       
       <div className="hud-widget-content" style={{ alignItems: 'center', padding: '8px' }}>
         
-        {/* The circular wrapper to center the number and the SVG */}
+        {/* The circular wrapper that holds the SVG and the number */}
         <div style={{ 
           position: 'relative', 
           width: '50px', 
@@ -141,21 +142,19 @@ const TimerWidget = ({ data, onRemove, defaultColor }) => {
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center',
-          marginBottom: '8px'
+          marginBottom: '8px',
+          color: defaultColor /* Critical: This cascades down to the SVG's currentColor */
         }}>
-          {/* The spinning SVG ring */}
+          
+          {/* The optimized SVG reference. 
+            The SVG tag itself spins, but the complex geometry is fetched efficiently.
+          */}
           <svg 
             viewBox="0 0 50 50" 
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            className="hud-spin-slow" /* Using your existing slow spin animation */
+            className="hud-spin-slow" 
           >
-            <circle 
-              cx="25" cy="25" r="20" 
-              fill="none" 
-              stroke={defaultColor} 
-              strokeWidth="2" 
-              strokeDasharray="10 5" /* Makes the circle dashed so we can see it spin */
-            />
+            <use href="/nbaya_timer.svg#timer-ring" />
           </svg>
           
           {/* The number in the middle */}
@@ -317,18 +316,9 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
         <svg viewBox="-500 -500 1000 1000" width="100%" height="100%" overflow="visible">
           <g className="hud-left-group" stroke={appColor} fill="none">
             <circle cx="0" cy="0" r="490" strokeWidth="1" opacity="0.2" />
-            <path 
-              d="M -255 -441.7 A 510 510 0 0 1 441.7 255" 
-              strokeWidth="2" 
-              strokeDasharray="15 10 5 10" 
-              className="hud-spin-slow" 
-            />
-            <path 
-              d="M 92.0 -521.9 A 530 530 0 0 1 498.0 181.3"
-              strokeWidth="12" 
-              strokeDasharray="60 12" 
-              className="hud-spin-fast-reverse" 
-            />
+            <circle cx="0" cy="0" r="530" fill="none" className="hud-spin-fast-reverse" stroke={appColor} stroke-width="3" stroke-dasharray="60 12 10 12" />
+            <circle cx="0" cy="0" r="510" fill="none" className="hud-spin-slow" stroke={appColor} stroke-width="15" stroke-dasharray="20 5 20 5 20 500" />
+
             <line x1="-50" y1="0" x2="-20" y2="0" strokeWidth="1" opacity="0.4" />
             <line x1="20" y1="0" x2="50" y2="0" strokeWidth="1" opacity="0.4" />
             <line x1="0" y1="-50" x2="0" y2="-20" strokeWidth="1" opacity="0.4" />

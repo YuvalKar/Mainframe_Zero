@@ -82,7 +82,7 @@ def run_hud_test_sequence():
     sleep(0.4)
 
     # 5. REMOVE Widgets
-    sleep(5)
-    remove_hud_widget("TXT_001")
-    sleep(0.4)
-    remove_hud_widget("ERR_001")
+    # sleep(5)
+    # remove_hud_widget("TXT_001")
+    # sleep(0.4)
+    # remove_hud_widget("ERR_001")

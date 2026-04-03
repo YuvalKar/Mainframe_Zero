@@ -1,5 +1,20 @@
 /* src/components/StaticHud.css */
 
+/* Hardware-accelerated pure rotation */
+.hud-efficient-spin {
+  animation: efficient-spin 4s linear infinite;
+  transform-origin: center;
+  /* These two lines force the browser to give this element its own GPU layer */
+  will-change: transform;
+  transform: translateZ(0); 
+}
+
+@keyframes efficient-spin {
+  0% { transform: translateZ(0) rotate(0deg); }
+  100% { transform: translateZ(0) rotate(360deg); }
+}
+
+
 .static-hud-overlay {
   position: fixed;
   top: 0;
@@ -16,28 +31,16 @@
 .hud-spin-slow {
   /* Set origin to 0 0 because the parent <g> is translated to the correct position */
   transform-origin: 0 0;
-  animation: hud-flow-40 30s linear infinite;
+  animation: rotate-circle 250s linear infinite;
   opacity: 0.4;
 }
 
 .hud-spin-fast-reverse {
   transform-origin: 0 0;
-  animation: hud-flow-48-reverse 10s linear infinite;
+  animation: rotate-circle-reverse 200s linear infinite;
   opacity: 0.2;
 }
-/* Moving the line forward */
-@keyframes hud-flow-40 {
-  to {
-    stroke-dashoffset: -40;
-  }
-}
 
-/* Moving the line backward */
-@keyframes hud-flow-48-reverse {
-  to {
-    stroke-dashoffset: 48;
-  }
-}
 
 /* Animations for left-side indicators */
 .hud-blink {
@@ -49,13 +52,24 @@
   animation: hud-pulse 2s ease-in-out infinite;
 }
 
-@keyframes hud-spin {
-  100% { transform: rotate(360deg); }
+@keyframes rotate-circle {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-@keyframes hud-spin-reverse {
-  100% { transform: rotate(-360deg); }
+@keyframes rotate-circle-reverse {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(-360deg);
+    }
 }
+
 
 @keyframes hud-blink {
   0%, 49% { opacity: 1; }
