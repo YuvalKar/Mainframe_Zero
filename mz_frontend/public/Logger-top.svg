@@ -7,7 +7,7 @@
 
   <path d="M5,92 L31,50 L175,50 L189,72 L327,72 L337,91 Z" fill="#4fa72e" fill-opacity="0.49" stroke="#4fa72e" stroke-width="2"/>
 
-  <text x="35" y="82" font-family="'Source Sans Pro', sans-serif" font-size="30" fill="#ffffff" font-weight="400">SYS  LOG</text>
+  <text x="40" y="78" font-family="'Source Sans Pro', sans-serif" font-size="20" fill="#ffffff" font-weight="400">SYS_LOG</text>
 
   <path d="M1180,86 L1180,30 L1166.8,7 L1089,7" stroke="#4fa72e" stroke-width="2" fill="none"/>
   <path d="M1156,86 L1180,86 L1190,104" stroke="#4fa72e" stroke-width="2" fill="none"/>

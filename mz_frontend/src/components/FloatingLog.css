@@ -33,7 +33,7 @@
   
   /* You will need to tweak these numbers based on the exact scaling of the SVG */
   top: -22px; 
-  right: 51px; 
+  right: 49px; 
   
   /* Ensure it stays clickable above the SVG and everything else */
   z-index: 20; 
@@ -126,7 +126,7 @@
   /* Take the SVG out of the normal document flow */
   position: absolute;
   top: -22px; /* Tweak this if you need to align it perfectly with the container border */
-  left: 2px;
+  left: 4px;
   width: calc(100% + 2px); /* Stretch to fit, compensating for the container border */
   height: auto;
   
@@ -141,7 +141,7 @@
   /* Position absolutely at the bottom of the overlay */
   position: absolute;
   bottom: -20px;
-  left: 2px;
+  left: 4px;
   width: calc(100% + 2px);
   height: auto;
   
