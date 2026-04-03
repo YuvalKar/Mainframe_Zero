@@ -5,15 +5,12 @@
   width: 700px;
   max-height: 450px;
   
+  /*
   background-color: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  
-  /* Hard blocky shadow for a hardware feel */
-  border: 1px solid #4fa72e;
-  border-left: 6px solid #4fa72e;
-  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.5); 
-  
+  */
+
   display: flex;
   flex-direction: column;
   z-index: 9999; /* Float above everything */
@@ -22,16 +19,6 @@
   color: #d4d4d4; 
 }
 
-.floating-log-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #252526;
-  border-bottom: 1px solid #555555;
-  padding: 8px 12px;
-  /* Prevent text selection while dragging */
-  user-select: none; 
-}
 
 .floating-log-title {
   font-size: 0.85em;
@@ -41,17 +28,36 @@
 }
 
 .floating-log-close {
+  /* Take the button out of normal document flow */
+  position: absolute;
+  
+  /* You will need to tweak these numbers based on the exact scaling of the SVG */
+  top: -22px; 
+  right: 51px; 
+  
+  /* Ensure it stays clickable above the SVG and everything else */
+  z-index: 20; 
+  
   background: none;
   border: none;
-  color: #858585;
+  color: #ffffff;
   font-size: 1.2em;
   cursor: pointer;
-  padding: 0 4px;
+  
+  /* Make it a perfect square for easier centering over the circle */
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 
 .floating-log-close:hover {
   color: #ef5350;
+  /* Optional: try uncommenting the line below if you want a cool hover effect over the circle */
+  /* text-shadow: 0 0 8px rgba(239, 83, 80, 0.8); */
 }
 
 .floating-log-container {
@@ -61,6 +67,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  background-color: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .floating-log-entry {
@@ -77,4 +87,65 @@
 
 .floating-log-entry .log-message {
   color: #d4d4d4;
+}
+
+/*
+.floating-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #252526;
+  border-bottom: 1px solid #555555;
+  padding: 8px 12px;
+  /* Prevent text selection while dragging * /
+  user-select: none; 
+}
+*/
+
+.floating-log-header {
+  display: flex;
+  justify-content: flex-end; /* Align the close button to the right */
+  align-items: center;
+  
+  /* Make background transparent and remove border, letting the SVG shine */
+  background-color: transparent;
+  border-bottom: none;
+  
+  padding: 8px 12px;
+  user-select: none; 
+  
+  /* Ensure we still have an invisible area to grab and drag */
+  min-height: 16px; 
+  
+  /* Keep it above the logs so the drag events work */
+  position: relative;
+  z-index: 10;
+}
+
+.floating-log-top-svg {
+  /* Take the SVG out of the normal document flow */
+  position: absolute;
+  top: -22px; /* Tweak this if you need to align it perfectly with the container border */
+  left: 2px;
+  width: calc(100% + 2px); /* Stretch to fit, compensating for the container border */
+  height: auto;
+  
+  /* Prevent the browser from intercepting drag events on the image */
+  pointer-events: none; 
+  
+  /* Place it behind the drag handle but above the background */
+  z-index: 1; 
+}
+
+.floating-log-bottom-svg {
+  /* Position absolutely at the bottom of the overlay */
+  position: absolute;
+  bottom: -20px;
+  left: 2px;
+  width: calc(100% + 2px);
+  height: auto;
+  
+  /* Make sure it doesn't block any clicks or scrolling */
+  pointer-events: none; 
+  z-index: 1; 
 }

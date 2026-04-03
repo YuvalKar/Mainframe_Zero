@@ -83,12 +83,23 @@ export default function FloatingLog({ systemLogs }) {
       }}
     >
       {/* Header acts as the drag handle */}
+      {/* TODO:add svg here? */}
+      
       <div 
         className="floating-log-header" 
         onMouseDown={handleMouseDown}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
-        <span className="floating-log-title">SYS.FULL_LOG</span>
+        {/* Render the SVG image */}
+        <img 
+          src="Logger-top.svg"
+          alt="Logger Top Decoration" 
+          className="floating-log-top-svg" 
+        />
+        
+        {/* Hide the text because the SVG already says 'SYS LOG' */}
+        {/* <span className="floating-log-title">SYS.FULL_LOG</span> */}
+
         <button 
           className="floating-log-close" 
           onClick={() => setIsVisible(false)}
@@ -116,6 +127,13 @@ export default function FloatingLog({ systemLogs }) {
         ))}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Bottom decoration */}
+      <img 
+        src="Logger-bottom.svg" 
+        alt="Logger Bottom" 
+        className="floating-log-bottom-svg" 
+      />
     </div>
   );
 }
