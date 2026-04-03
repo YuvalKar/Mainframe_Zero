@@ -25,11 +25,12 @@
   z-index: 9998; 
 }
 
-/* Animations for decorations */
+/* Animations for decorations (legacy) */
 .hud-spin-slow {
   transform-origin: 0 0;
   animation: rotate-circle 250s linear infinite;
   opacity: 0.4;
+  filter: drop-shadow(0 0 3px currentColor);
 }
 
 .hud-spin-fast-reverse {
@@ -40,6 +41,7 @@
 
 .hud-blink {
   animation: hud-blink 1.5s infinite;
+  filter: drop-shadow(0 0 2px currentColor);
 }
 
 .hud-pulse {
@@ -127,7 +129,7 @@
 }
 
 /* ----------------------- */
-/* Widget Base Styles */
+/* Widget Base Styles (DIV-based) */
 /* ----------------------- */
 
 .hud-widget-wrapper {
@@ -137,13 +139,15 @@
   font-family: monospace;
 }
 
-.hud-widget-svg-bg {
+.hud-widget-background {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  inset: 0;
+  /* Dark semi-transparent background */
+  background: rgba(30, 30, 30, 0.55); /* #1e1e1e */
+  /* Blur the content directly behind the widget */
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px); /* Safari fallback */
+  /* border: 1px dashed transparent; */
   pointer-events: none;
 }
 
@@ -155,7 +159,9 @@
   flex-direction: column;
   justify-content: center;
   height: 100%;
-  box-sizing: border-box; 
+  box-sizing: border-box;
+
+  text-shadow: 0 0 2px currentColor, 0 0 4px currentColor;
 }
 
 .hud-text-truncate {
@@ -166,7 +172,7 @@
 }
 
 /* ----------------------- */
-/* Specific Widget Styles */
+/* Specific Widget Styles (DIV-based) */
 /* ----------------------- */
 
 /* Gauge Widget */
@@ -185,6 +191,7 @@
 }
 .widget-gauge-fill {
   height: 100%;
+  box-shadow: 0 0 6px currentColor;
 }
 
 /* Worker Widget */
@@ -213,13 +220,14 @@
 }
 .widget-worker-fill {
   width: 100%;
+  box-shadow: 0 0 6px currentColor;
 }
 .widget-worker-value {
   margin-top: 8px;
   font-size: 10px;
 }
 
-/* Timer Widget */
+/* Timer Widget (DIV-based) */
 .widget-timer-wrapper {
   width: 80px;
   height: 100px;
@@ -229,6 +237,7 @@
   align-items: center;
   padding: 8px;
 }
+
 .widget-timer-circle {
   position: relative;
   width: 50px;
@@ -236,26 +245,49 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 8px;
+  /* Center the circle horizontally within its wrapper */
+  margin: 0 auto 8px auto; 
 }
-.widget-timer-svg {
+
+.widget-timer-spinner {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.widget-timer-spinner svg {
   width: 100%;
   height: 100%;
 }
+
 .widget-timer-value {
+  position: absolute;
   font-size: 14px;
   z-index: 1;
   font-weight: bold;
+  margin: 0;
 }
+
 .widget-timer-label {
   font-size: 10px;
   text-align: center;
 }
 
-/* Error Widget */
+/* ----------------------- */
+/* Error Widget (legacy, keep PlaceholderBg) */
+/* ----------------------- */
+/* specific-timer-widgets.css - The legacy placeholder SVG class */
+.hud-widget-svg-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
 .widget-error-wrapper {
   min-height: 60px;
 }

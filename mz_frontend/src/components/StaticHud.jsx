@@ -1,5 +1,6 @@
 // src/components/StaticHud.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import './StaticHud.css';
 
 // --- Shared Placeholder SVG Component ---
@@ -14,14 +15,14 @@ const PlaceholderBg = ({ color }) => (
 );
 
 // --- Widgets ---
-
 const TextWidget = ({ data, level, defaultColor }) => {
   const color = level === 'error' ? '#ff4a4a' : level === 'warning' ? '#ffcc00' : defaultColor;
   const textValue = data?.value || "NO TEXT";
 
   return (
     <div className="hud-widget-wrapper" style={{ color }}>
-      <PlaceholderBg color={color} />
+      {/* Use the new background div instead of PlaceholderBg */}
+      <div className="hud-widget-background" style={{ borderColor: color }} />
       <div className="hud-widget-content">
         <span className="hud-text-truncate">{textValue}</span>
       </div>
@@ -35,7 +36,8 @@ const GaugeWidget = ({ data, defaultColor }) => {
 
   return (
     <div className="hud-widget-wrapper widget-gauge-wrapper" style={{ color: defaultColor }}>
-      <PlaceholderBg color={defaultColor} />
+      {/* --- Replaced PlaceholderBg with DIVs --- */}
+      <div className="hud-widget-background" style={{ borderColor: defaultColor }} />
       <div className="hud-widget-content">
         <div className="hud-text-truncate widget-gauge-label">
           {label}: {val}%
@@ -48,13 +50,15 @@ const GaugeWidget = ({ data, defaultColor }) => {
   );
 };
 
+
 const WorkerWidget = ({ data, defaultColor }) => {
   const val = typeof data?.value === 'number' ? data.value : 0;
   const label = data?.label || 'WRK'; 
 
   return (
     <div className="hud-widget-wrapper widget-worker-wrapper" style={{ color: defaultColor }}>
-      <PlaceholderBg color={defaultColor} />
+      {/* --- Replaced PlaceholderBg with DIVs --- */}
+      <div className="hud-widget-background" style={{ borderColor: defaultColor }} />
       <div className="hud-widget-content widget-worker-content">
         <div className="hud-text-truncate widget-worker-label">
           {label}
@@ -74,37 +78,64 @@ const WorkerWidget = ({ data, defaultColor }) => {
 
 const TimerWidget = ({ data, onRemove, defaultColor }) => {
   const label = data?.label || "TASK";
-  const [timeLeft, setTimeLeft] = useState(data?.value || 5);
+  
+  // We use refs instead of state. Changing a ref DOES NOT trigger a re-render.
+  const timeLeftRef = useRef(data?.value || 5);
+  // This ref will point directly to the HTML DOM element (the div showing the number)
+  const displayRef = useRef(null);
 
   useEffect(() => {
+    // Update the ref value if parent passes a new data.value
     if (data?.value !== undefined) {
-      setTimeLeft(data.value);
+      timeLeftRef.current = data.value;
+      if (displayRef.current) {
+        displayRef.current.textContent = timeLeftRef.current;
+      }
     }
   }, [data?.value]);
 
   useEffect(() => {
-    if (timeLeft <= 0) {
-      onRemove?.();
-      return;
-    }
-    const timerId = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    const timerId = setInterval(() => {
+      // Decrease the internal value
+      timeLeftRef.current -= 1;
+
+      // Direct DOM manipulation - Vanilla JS inside React!
+      if (displayRef.current) {
+        displayRef.current.textContent = timeLeftRef.current;
+      }
+
+      // Check if time is up
+      if (timeLeftRef.current <= 0) {
+        clearInterval(timerId);
+        onRemove?.();
+      }
+    }, 1000);
+
     return () => clearInterval(timerId);
-  }, [timeLeft, onRemove]);
+  }, [onRemove]);
 
   return (
     <div className="hud-widget-wrapper widget-timer-wrapper" style={{ color: defaultColor }}>
-      <PlaceholderBg color={defaultColor} />
+      <div className="hud-widget-background" style={{ borderColor: defaultColor }} />
       <div className="hud-widget-content widget-timer-content">
         
-        {/* The color inline style here cascades down to the SVG's currentColor */}
         <div className="widget-timer-circle" style={{ color: defaultColor }}>
-          <svg 
-            viewBox="0 0 50 50" 
-            className="hud-spin-slow widget-timer-svg" 
-          >
-            <use href="/nbaya_timer.svg#timer-ring" />
-          </svg>
-          <strong className="widget-timer-value">{timeLeft}</strong>
+          
+          <div className="widget-timer-spinner">
+            {/* We can use the existing efficient-spin class we already have in CSS */}
+            <svg 
+              viewBox="0 0 50 50" 
+              className="hud-efficient-spin" 
+            >
+              <use href="/nbaya_timer.svg#timer-ring" />
+            </svg>
+          </div>
+
+          {/* We attach the ref to this div. React will render it once, and then we take over. */}
+          <div className="widget-timer-value" ref={displayRef}>
+            {timeLeftRef.current}
+          </div>
+          
         </div>
 
         <span className="hud-text-truncate widget-timer-label">
@@ -122,7 +153,8 @@ const ErrorWidget = ({ data }) => {
 
   return (
     <div className="hud-widget-wrapper widget-error-wrapper" style={{ color }}>
-      <PlaceholderBg color={color} />
+      {/* Use the new background div with the error color */}
+      <div className="hud-widget-background" style={{ borderColor: color }} />
       <div className="hud-widget-content">
         <div className="hud-text-truncate widget-error-label">
           SYS.ERROR {errorCode}
