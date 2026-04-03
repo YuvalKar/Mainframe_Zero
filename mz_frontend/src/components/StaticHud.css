@@ -4,7 +4,7 @@
 .hud-efficient-spin {
   animation: efficient-spin 4s linear infinite;
   transform-origin: center;
-  /* These two lines force the browser to give this element its own GPU layer */
+  /* Force browser to use a dedicated GPU layer */
   will-change: transform;
   transform: translateZ(0); 
 }
@@ -14,22 +14,19 @@
   100% { transform: translateZ(0) rotate(360deg); }
 }
 
-
 .static-hud-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  /* CRITICAL: ensures clicks pass through the SVG to the app below */
+  /* Allow clicks to pass through to the app */
   pointer-events: none; 
-  /* Float above the app, but stay under the FloatingLog (which is 9999) */
   z-index: 9998; 
 }
 
-/* Animations for the right-side decoration */
+/* Animations for decorations */
 .hud-spin-slow {
-  /* Set origin to 0 0 because the parent <g> is translated to the correct position */
   transform-origin: 0 0;
   animation: rotate-circle 250s linear infinite;
   opacity: 0.4;
@@ -41,8 +38,6 @@
   opacity: 0.2;
 }
 
-
-/* Animations for left-side indicators */
 .hud-blink {
   animation: hud-blink 1.5s infinite;
 }
@@ -53,23 +48,14 @@
 }
 
 @keyframes rotate-circle {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes rotate-circle-reverse {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(-360deg);
-    }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
 }
-
 
 @keyframes hud-blink {
   0%, 49% { opacity: 1; }
@@ -83,31 +69,24 @@
 }
 
 /* ----------------------- */
-/* Container for all anchor zones. Stretches over the whole screen */
+/* Anchor Zones */
+/* ----------------------- */
+
 .hud-anchors-container {
   position: absolute;
-  /* inset: 0 is a shortcut for top: 0, right: 0, bottom: 0, left: 0 */
   inset: 0; 
   pointer-events: none;
 }
 
-/* Base class for any anchor zone */
 .hud-anchor-zone {
   position: absolute;
-  /* Ugly, bright border just for debugging so we don't miss it 
-  border: 2px dashed #ff00ff; 
-  background-color: rgba(255, 0, 255, 0.1);
-  */
   padding: 15px;
-  /* Flexbox will automatically stack widgets vertically with a gap */
   display: flex;
   flex-direction: column;
   gap: 10px; 
-  /* Prevent widgets from overflowing their zone */
   overflow: hidden; 
 }
 
-/* Specific Anchor: Top Right */
 .zone-top-left {
   top: 60px;
   left: 40%;
@@ -122,10 +101,7 @@
   right: 1%;
   width: 400px;
   height: 120px;
-
-  /* Override the default column behavior to arrange children side-by-side */
   flex-direction: row; 
-  /* Allow widgets to wrap to a new line if there are too many for the width */
   flex-wrap: wrap;  
 }
 
@@ -150,18 +126,17 @@
   height: 30vh;
 }
 
-/* --- WIDGET BASE STYLES --- */
+/* ----------------------- */
+/* Widget Base Styles */
+/* ----------------------- */
 
-/* The outer wrapper for each widget component */
 .hud-widget-wrapper {
   position: relative;
   width: 100%;
-  /* Base height, can be overridden by specific widgets */
   min-height: 40px; 
   font-family: monospace;
 }
 
-/* The SVG sitting in the background */
 .hud-widget-svg-bg {
   position: absolute;
   bottom: 0;
@@ -172,7 +147,6 @@
   pointer-events: none;
 }
 
-/* The content layer sitting on top of the SVG */
 .hud-widget-content {
   position: relative;
   z-index: 1;
@@ -181,14 +155,134 @@
   flex-direction: column;
   justify-content: center;
   height: 100%;
-  /* Ensure padding doesn't increase total width */
   box-sizing: border-box; 
 }
 
-/* Utility class for truncating long text with "..." */
 .hud-text-truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+}
+
+/* ----------------------- */
+/* Specific Widget Styles */
+/* ----------------------- */
+
+/* Gauge Widget */
+.widget-gauge-wrapper {
+  min-height: 50px;
+}
+.widget-gauge-label {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.widget-gauge-track {
+  background: rgba(0,0,0,0.5);
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+}
+.widget-gauge-fill {
+  height: 100%;
+}
+
+/* Worker Widget */
+.widget-worker-wrapper {
+  width: 70px;
+  height: 120px;
+  display: inline-block;
+  margin-right: 10px;
+}
+.widget-worker-content {
+  align-items: center;
+  padding: 8px 4px;
+}
+.widget-worker-label {
+  margin-bottom: 8px;
+  font-size: 10px;
+  text-align: center;
+}
+.widget-worker-track {
+  background: rgba(0,0,0,0.5);
+  width: 12px;
+  flex-grow: 1;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.widget-worker-fill {
+  width: 100%;
+}
+.widget-worker-value {
+  margin-top: 8px;
+  font-size: 10px;
+}
+
+/* Timer Widget */
+.widget-timer-wrapper {
+  width: 80px;
+  height: 100px;
+  display: inline-block;
+}
+.widget-timer-content {
+  align-items: center;
+  padding: 8px;
+}
+.widget-timer-circle {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.widget-timer-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.widget-timer-value {
+  font-size: 14px;
+  z-index: 1;
+  font-weight: bold;
+}
+.widget-timer-label {
+  font-size: 10px;
+  text-align: center;
+}
+
+/* Error Widget */
+.widget-error-wrapper {
+  min-height: 60px;
+}
+.widget-error-label {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* ----------------------- */
+/* Layout Decorations */
+/* ----------------------- */
+
+.hud-left-decoration {
+  position: absolute;
+  left: 20%;
+  top: 70%;
+  width: 110vh;
+  height: 110vh;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hud-top-indicator {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
