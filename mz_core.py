@@ -2,6 +2,7 @@ import json
 import asyncio
 
 from dotenv import load_dotenv
+from core_utils.hud_streamer import send_hud_error, send_hud_text
 
 from core_utils.hud_streamer import send_hud_error
 
@@ -34,7 +35,7 @@ async def init_workers():
     Initializes all background agents, injects dependencies, and starts their queues.
     Ensures that the `active_workers` registry is populated with worker instances.
     """ 
-    print("[Core] Initializing background workers...")
+    send_hud_text("CORE", "Initializing background workers...",level="info")
     
     # 1. Initialize the shared summarizer ONCE
     shared_summarizer = SummarizerAgent()
@@ -52,9 +53,9 @@ async def init_workers():
     worker_tasks.append(asyncio.create_task(shared_summarizer.start()))
     worker_tasks.append(asyncio.create_task(doc_agent.start()))
     worker_tasks.append(asyncio.create_task(attention_worker.start()))
-    
-    print("[Core] All background workers are online and listening.")
-    
+
+    send_hud_text("CORE", "All background workers are online and listening.",level="info")
+        
 #########################################
 async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_input: str = "", emit_callback=None) -> dict:
     """
@@ -84,6 +85,7 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
     while True:
         loop_counter += 1
         if loop_counter > max_loops:
+            send_hud_text("system", "Agent reached maximum allowed loops.",level="warning")
             await log_and_emit("system", "Agent reached maximum allowed loops.")
             break
 

@@ -4,6 +4,7 @@ import importlib.util
 from core_utils.attention_ops import shift_attention
 from database.db_wernicke_semantic_cortex import query_semantic_cortex
 from senses.sense_get_installed_apps import execute as get_installed_apps
+from core_utils.hud_streamer import send_hud_error, send_hud_text
 
 from llm_router import get_available_models
 
@@ -140,6 +141,8 @@ def get_available_actions(directory_path: str) -> dict:
 
 #######################################################
 def get_senantic_RAG(task_description: str, session_context: dict, limit: int = 5) -> dict:
+
+    send_hud_text("RAG_QUERY", "Attempting to retrieve relevant RAG information from the Wernicke Cortex.", level="info")
     
     active_attention = session_context.get("active_attention")
 
@@ -178,12 +181,14 @@ def get_senantic_RAG(task_description: str, session_context: dict, limit: int = 
         
         # Check if we got any hits
         if results:
+            send_hud_text("RAG_QUERY", f"Found {len(results)} relevant RAG information from the Wernicke Cortex.", level="info")
             return {
                 "success": True, 
                 "message": f"Found {len(results)} relevant resoults in contexts: {app_name} - {semantics}.", 
                 "data": results
             }
         else:
+            send_hud_text("RAG_QUERY", "Found NO relevant RAG information from the Wernicke Cortex.", level="warning")
             return {
                 "success": True, 
                 "message": f"No relevant resoults found for this task in the specified contexts: {app_name} - {semantics}.", 
@@ -192,6 +197,7 @@ def get_senantic_RAG(task_description: str, session_context: dict, limit: int = 
             
     except Exception as e:
         # Catch errors gracefully so the AI doesn't crash the main loop
+        send_hud_error("RAG_ERROR", f"Failed to query Wernicke Cortex: {str(e)}")
         return {
             "success": False, 
             "message": f"Failed to query Wernicke Cortex: {str(e)}"
@@ -233,6 +239,8 @@ def switch_apps(app_name: str, session_context: dict) -> dict:
     # if all is OK Switch attention to new app
     new_focus = {}
     shift_attention(session_context, new_focus, app_name=app_name)
+
+    send_hud_text("ACTION_OPS", f"Switched focus to app '{app_name}'.", level="info")
 
     return {
         "success": True,

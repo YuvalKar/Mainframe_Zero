@@ -21,7 +21,7 @@ overhead when using lightweight cloud APIs.
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from core_utils.hud_streamer import send_hud_gauge
+from core_utils.hud_streamer import send_hud_gauge, send_hud_text, send_hud_error
 
 
 import asyncio
@@ -95,6 +95,7 @@ async def generate_ai_response(session_context: dict, prompt: str, system_rules:
     elif model_family == "local":
         return await _call_local_llama(model_config, prompt, system_rules)
     else:
+        send_hud_error("ROUTER_ERROR", f"Unknown model family: {model_family} for key: {model_key}")
         raise ValueError(f"[Router Error] Unknown model_family: {model_family} for key: {model_key}")
     
 
@@ -126,12 +127,13 @@ async def _call_gemini_api(model_config: dict, prompt: str, system_rules: str) -
         # Calculate and print the usage percentage based on the model's safe limit
         max_tokens = model_config.get("max_tokens")
         usage_percent = (prompt_tokens / max_tokens) * 100
-        print(f"Capacity Used: {usage_percent:.2f}% (Safe Limit: {max_tokens})")
+        # print(f"Capacity Used: {usage_percent:.2f}% (Safe Limit: {max_tokens})")
             
         send_hud_gauge("PROMPT", usage_percent, "Prompt Tokens")
 
     # Ensure we return only the text, not the entire response object
     if not response or not response.text:
+        send_hud_text("ROUTER_WARNING", "Received empty response from Gemini API.",level="error")
         return ""
     return response.text
 
