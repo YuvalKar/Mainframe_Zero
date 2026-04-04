@@ -109,9 +109,10 @@
 
 .zone-mid {
   top: 230px;
-  left: 52%;
-  width: 40%; 
+  left: 46%;
+  width: 600px; 
   height: 40vh;
+  /* border: 2px dashed rgba(255, 255, 255, 0.3); */
 }
 
 .zone-bottom {
@@ -317,4 +318,56 @@
   pointer-events: none;
   width: 100%;
   height: 100%;
+}
+
+/* Lock the SVG container strictly to the wrapper's dimensions */
+.hud-text-svg-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: visible; /* Allow SVG to render outside if needed */
+}
+
+.widget-text-wrapper {
+  height: 60px;
+}
+
+.widget-text-content {
+  left: 110px;
+  top: 2px;
+  width: 300px;
+}
+
+/* Lock the SVG container strictly to the ERROR wrapper's dimensions */
+.widget-error-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 80px;
+  font-family: monospace;
+}
+
+.hud-error-svg-container {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  overflow: visible; /* Allow SVG to render outside if needed */
+}
+
+.widget-error-wrapper {
+  height: 100px;
+}
+
+.widget-error-content {
+  left: 0px;
+  top: 2px;
+}
+.widget-error-label {
+  font-size: 15px;
+  margin-top: -6px;
+  font-weight: bold;
+}
+
+.widget-error-text {
+  margin-top: 5px;
+  /* border: 1px dashed rgba(255, 255, 255, 0.3); */
 }

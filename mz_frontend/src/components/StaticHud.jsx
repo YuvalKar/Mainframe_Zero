@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 
 import './StaticHud.css';
 
+// test: activate QA test "HUD_TEST"
+// ----------------------------------
+
 // --- Shared Placeholder SVG Component ---
 const PlaceholderBg = ({ color }) => (
   <svg className="hud-widget-svg-bg" preserveAspectRatio="none" viewBox="0 0 100 100">
@@ -20,10 +23,34 @@ const TextWidget = ({ data, level, defaultColor }) => {
   const textValue = data?.value || "NO TEXT";
 
   return (
-    <div className="hud-widget-wrapper" style={{ color }}>
-      {/* Use the new background div instead of PlaceholderBg */}
-      <div className="hud-widget-background" style={{ borderColor: color }} />
-      <div className="hud-widget-content">
+    <div className="hud-widget-wrapper widget-text-wrapper" style={{ color }}>
+    
+      <div className='hud-text-svg-container'>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -5 994 90" preserveAspectRatio="none">
+          {/* Using inline style block for dynamic color injection */}
+          <style>{`
+            .blue-fill { fill: ${defaultColor}; opacity: 0.5; }
+            .outline { fill: none; stroke: ${defaultColor}; stroke-width: 1px; }
+          `}</style>
+
+          <g transform="translate(2, -2)">
+            <path className="blue-fill" d="M115.4 68 H96 L109.3 45 H128.7 Z" />
+            <path className="blue-fill" d="M140.4 68 H121 L134.3 45 H153.7 Z" />
+            <path className="blue-fill" d="M166.4 68 H147 L160.3 45 H179.7 Z" />
+            <path fill={color} opacity="0.8" d="M890 73 V27 H913 V59.7 Z" />
+            <path className="blue-fill" d="M719 23 H541 L554.3 0 H705.7 Z" />
+
+            <path d="M195.5 27 H885 V73 H168.9 Z" fill="#313131" opacity="0.75" stroke={defaultColor} strokeWidth="1" />
+
+            <path className="outline" d="M172 72 H34" />
+            <path className="outline" d="M759 78.5 H919 V40" />
+
+            {/* The circle was moved up to align with the bottom path */}
+            <circle cx="18" cy="72" r="7.5" fill={color} stroke={color} strokeWidth="1" />
+          </g>
+        </svg>
+      </div>
+      <div className="hud-widget-content widget-text-content">
         <span className="hud-text-truncate">{textValue}</span>
       </div>
     </div>
@@ -125,9 +152,9 @@ const TimerWidget = ({ data, onRemove, defaultColor }) => {
             {/* We can use the existing efficient-spin class we already have in CSS */}
             <svg 
               viewBox="0 0 50 50" 
-              className="hud-efficient-spin" 
+              className="hud-efficient-spin"
             >
-              <use href="/nbaya_timer.svg#timer-ring" />
+                  <use href="/nbaya_timer.svg#timer-ring" />
             </svg>
           </div>
 
@@ -153,13 +180,54 @@ const ErrorWidget = ({ data }) => {
 
   return (
     <div className="hud-widget-wrapper widget-error-wrapper" style={{ color }}>
-      {/* Use the new background div with the error color */}
-      <div className="hud-widget-background" style={{ borderColor: color }} />
-      <div className="hud-widget-content">
+
+    <div className='hud-error-svg-container'>
+
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 716 182" preserveAspectRatio="none">
+          <style>{`
+            .red-fill { fill: #ff4a4a; opacity: 0.5; }
+            .red-outline { fill: none; stroke: #ff4a4a; stroke-width: 1px; }
+          `}</style>      
+        <g transform="translate(2, 2)">
+          {/* Right side background shapes (diagonal lines) */}
+          <path className="red-fill" d="M389.5 42 H406 L394.7 22 H378.3 Z" />
+          <path className="red-fill" d="M368.3 42 H384.8 L373.5 22 H357 Z" />
+          <path className="red-fill" d="M346.3 42 H362.7 L351.5 22 H335 Z" />
+
+          {/* Main outline */}
+          <path className="red-outline" d="M0 132 V46 L28 0 H178 L191.7 23 H329.8 L342 46 H715.8" />
+
+          {/* Top tab background */}
+          <path d="M5 47 L31 5 H175 L189 27 H327 L337 46 Z" stroke="#ff4a4a" fill= "#ff1b1b" strokeWidth="2" />
+
+          {/* Title text */}
+          <text 
+            x="37" 
+            y="33" 
+            style={{ 
+              fontFamily: 'monospace', 
+              fontSize: '20px', 
+              fill: '#fff',
+              textShadow: 'none' // To override any HUD text shadows if needed
+            }}
+          >
+            Brain Freeze
+          </text>
+
+          {/* Main body */}
+          <path className="red-fill" d="M384.5 96 H5 V50 H411.1 Z" />
+        </g>
+      </svg>
+
+    </div>
+
+      <div className="hud-widget-content widget-error-content">
         <div className="hud-text-truncate widget-error-label">
           SYS.ERROR {errorCode}
         </div>
-        <div className="hud-text-truncate">{errorMessage}</div>
+        <div className="hud-text-truncate widget-error-text">
+          {errorMessage}
+        </div>
       </div>
     </div>
   );
