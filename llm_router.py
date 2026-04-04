@@ -152,6 +152,7 @@ async def _call_local_llama(model_config: dict, prompt: str, system_rules: str) 
     
     # Check if we need to load a new model
     if _current_local_model_path != model_path:
+        send_hud_text("Router", "Loading local model", level="info")
         print(f"[Router] Loading local model from: {model_path}")
         
         # Clear existing model from VRAM if one exists
