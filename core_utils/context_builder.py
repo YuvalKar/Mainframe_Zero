@@ -178,7 +178,7 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     # Render the template with all our gathered data
     enriched_prompt_with_template = template.render(
             app_role_context=app_role_context,
-            available_actions=current_skills,
+            available_actions=current_senses,
             context_data=context_data,
             conversation_history=conversation_history,
             user_input=user_input,

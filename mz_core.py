@@ -1,3 +1,4 @@
+import ast
 import json
 import asyncio
 
@@ -84,10 +85,6 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
 
     while True:
         loop_counter += 1
-        if loop_counter > max_loops:
-            send_hud_text("system", "Agent reached maximum allowed loops.",level="warning")
-            await log_and_emit("system", "Agent reached maximum allowed loops.")
-            break
 
         try:
             log_pipeline_step(log_file, "backend_api_request", {"loop": loop_counter, "prompt": current_prompt})
@@ -132,7 +129,13 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                         actions=turn_actions_log, 
                         ai_response=chat_text or ""
                     )
-                break   
+                break
+
+            # Still more actions to execute, but we should check if we've hit the loop limit to avoid infinite loops
+            if loop_counter > max_loops:
+                send_hud_text("system", "Agent reached maximum allowed loops.",level="warning")
+                await log_and_emit("system", "Agent reached maximum allowed loops.")
+                break 
 
             execution_summary = []
             for act_item in actions_list:
@@ -146,11 +149,43 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                 
                 await log_and_emit("action_result", result_string)
                 
-                # Record the specific action and its sensory feedback
+                # ##########################Record the specific action and its sensory feedback
+                # turn_actions_log.append({
+                #     "action": action_name,
+                #     "result": result_string
+                # })
+                ##########################
+                # Create a slim version of the result for the history log
+                slim_result = result_string
+
+                try:
+                    # Attempt to parse the result string (assuming it looks like "Action '...': {...}")
+                    # Note: You might need to adjust parsing based on EXACTLY how execute_single_action formats its output.
+                    if result_string.startswith("Action '") and "': {" in result_string:
+                        # Extract just the dictionary part
+                        dict_part = result_string.split("': ", 1)[1]
+                        
+                        # Use ast.literal_eval for safety if it's a python dict string, or json.loads if it's strict JSON
+                        action_dict = ast.literal_eval(dict_part)
+                        
+                        # Build the slim version
+                        if isinstance(action_dict, dict):
+                            status = action_dict.get('success', 'Unknown')
+                            message = action_dict.get('message', 'No message provided.')
+                            slim_result = f"Action status: {status}. Message: {message}"
+                            
+                except Exception as e:
+                    # If parsing fails for any reason, keep the original (or a truncated version)
+                    # This ensures we don't crash if an action returns plain text
+                    print(f"Failed to parse action result for slimming: {e}")
+                    # Optionally truncate if it's super long: slim_result = result_string[:500] + "..." 
+
+                # Record the specific action and its SLIM feedback
                 turn_actions_log.append({
                     "action": action_name,
-                    "result": result_string
+                    "result": slim_result 
                 })
+                ###############################
 
             if execution_summary:
                 # add to prompt for the next loop so the AI can reflect on the results of its actions

@@ -2,11 +2,15 @@
 {{ app_role_context }}
 
 # System Context: Available Actions
-
 {% if available_actions %}
 You have access to the following actions:
-{{ available_actions }}
-{% else %}
+
+{# Iterate over the dictionary key-value pairs #}
+{% for action_name, action_text in available_actions.items() %}
+## Action: `{{ action_name }}`
+{{ action_text }}
+
+{% endfor %}
 {% endif %}
 
 # System Context: Special SYS Action
