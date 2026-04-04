@@ -23,7 +23,7 @@ from workers.worker_base import BaseWorker
 from workers.summarizer_agent import SummarizerAgent
 from database.db_files_data import get_file_data
 from database.db_chat_history import get_recent_chat_history
-
+from core_utils.hud_streamer import send_hud_error, send_hud_text, send_hud_worker
 
 class AttentionWorker(BaseWorker):
     
@@ -33,15 +33,20 @@ class AttentionWorker(BaseWorker):
         self.summarizer = summarizer
 
     async def process_task(self, task_data: dict):
+
+        send_hud_worker("ATT_WORKER", 0, "Attention")
+
         # Extract the new expected fields from the incoming task
         attention_id = task_data.get("attention_id")
         session_id = task_data.get("session_id")
         timestamp = task_data.get("timestamp")
 
+        send_hud_text("ATT_WORKER", "AttentionWorker step 1", level="info")
         print(f"[{self.name}] Processing attention update for ID: {attention_id} ...")
 
         # Validate that we have all the necessary breadcrumbs to start working
         if not all([attention_id, session_id, timestamp]):
+            send_hud_error("ATT_WORKER_ERR", f"Missing data for attention ID: {attention_id}", code=65481)
             print(f"[{self.name}] Missing required data (attention_id, session_id, or timestamp). Aborting.")
             return None
 
@@ -53,7 +58,9 @@ class AttentionWorker(BaseWorker):
             return None
         
         # --- Data Gathering Phase ---
-        
+        send_hud_worker("ATT_WORKER", 20, "Attention")
+        send_hud_text("ATT_WORKER", "AttentionWorker step 2", level="info")
+
         # 1. Gather summaries for all working files attached to this attention
         working_files_data = [] # list of Dict
         for file_path in orig_attention_data.get("working_files", {}).keys():
@@ -75,6 +82,7 @@ class AttentionWorker(BaseWorker):
         recent_chats = get_recent_chat_history(session_id, limit=10, timestamp=timestamp)
         
         # ... Next up: formatting all this gathered data! ...
+        send_hud_text("ATT_WORKER", "AttentionWorker step 3", level="info")
 
         # Extract the existing context
         existing_context = orig_attention_data.get("detailed_summary") or orig_attention_data.get("short_summary") or ""
@@ -94,7 +102,7 @@ class AttentionWorker(BaseWorker):
             focus=focus_data,
             chats=recent_chats
         )
-
+    
         print(f"[{self.name}] Generated prompt from template successfully. Sending to summarizer...")
 
         # 5. Send to SummarizerAgent
@@ -106,6 +114,8 @@ class AttentionWorker(BaseWorker):
             "summary_lengths": summary_lengths
         }
 
+        send_hud_text("ATT_WORKER", "AttentionWorker - summarizer", level="info")
+        send_hud_worker("ATT_WORKER", 60, "Attention")
         # Take a number in line and get a beeper
         beeper = await self.summarizer.add_task(summarizer_task)
         
@@ -127,9 +137,12 @@ class AttentionWorker(BaseWorker):
         if updates:
             success = update_attention_record(attention_id, **updates)
             if not success:
+                send_hud_error("ATT_WORKER_ERR", f"Failed to update DB for attention ID: {attention_id}", code=5678245)
                 print(f"[{self.name}] Failed to update database for ID: {attention_id}")
 
         updated_record = get_attention_record(attention_id)
+        send_hud_text("ATT_WORKER", "AttentionWorker Successfully processed", level="info")
+        send_hud_worker("ATT_WORKER", 0, "Attention")
         print(f"[{self.name}] Successfully processed and updated ID: {attention_id}")
         
         return updated_record

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -9,12 +10,20 @@ from core_utils.attention_ops import update_session_attention
 from database.db_chat_history import get_recent_chat_history
 from senses.sense_get_installed_apps import execute as get_installed_apps
 
+from core_utils.hud_streamer import send_hud_error, send_hud_text
+
+
+from jinja2 import Template
+import os
+from jinja2 import Environment, FileSystemLoader
+
 #########################################
 def get_system_prompt() -> str:
     try:
         with open("system_prompt.md", "r", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
+        send_hud_error("CONTEXT", "system_prompt.md not found", code=12026)
         print("[Core Warning: system_prompt.md not found]")
         return "You are a helpful AI."
 
@@ -151,6 +160,36 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
                     enriched_prompt += get_senantic_RAG + "\n\n"
 
 
-    return enriched_prompt
+    # -------------------------------
+    app_role_context = "app_role_context" # TODO: later
+
+
+
+    # TODO: optimise, read only once
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+    templates_dir = os.path.join(base_dir, 'prompt_templates')
+    
+    env = Environment(loader=FileSystemLoader(templates_dir))
+    template = env.get_template('main_prompt.j2')
+
+    conversation_history = json.dumps(history, indent=2, sort_keys=False)
+    context_data = session_context.get("client_context", {})
+
+    # Render the template with all our gathered data
+    enriched_prompt_with_template = template.render(
+            app_role_context=app_role_context,
+            available_actions=current_skills,
+            context_data=context_data,
+            conversation_history=conversation_history,
+            user_input=user_input,
+        )
+    
+    # -------------------------------
+
+    # keep the prompt in temp file for debugging in .logs folder
+    with open("./.logs/temp_enriched_prompt.md", "w", encoding="utf-8") as f:
+        f.write(enriched_prompt_with_template)
+
+    return enriched_prompt_with_template
 
 #########################################

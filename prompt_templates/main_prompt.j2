@@ -1,0 +1,48 @@
+# Role Context
+{{ app_role_context }}
+
+# System Context: Available Actions
+
+{% if available_actions %}
+You have access to the following actions:
+{{ available_actions }}
+{% else %}
+{% endif %}
+
+# System Context: Special SYS Action
+Before using these actions, call `get_API_descriptions` with the names of the actions you plan to execute.
+Once you get the API description for an action, you can call the action directly by its name and passing the required parameters.
+* **Name:** `get_API_descriptions`
+* **Input:** `action_names` (list): A list of action names (SKILLS / SENSES) for which to retrieve their API descriptions.
+
+{% if context_data and (context_data.activeDocument or context_data.attentionShelf) %}
+---
+
+# User Workspace Environment
+This section describes the user's current view in their editor.
+
+## Active Document {% if context_data.activeDocument %}
+The user is currently viewing and working in this file:
+* `{{ context_data.activeDocument }}` {% if context_data.selectedText %}
+### Selected Text
+The user has highlighted the following text within the active document:
+```
+{{ context_data.selectedText }}
+```
+{% endif %}{% endif %}{% if context_data.attentionShelf %}
+## Reference Files
+The user has marked the following files as relevant to the current task. You may need to access these for context:
+{% for file in context_data.attentionShelf %}{{ file }}
+{% endfor %}{% endif %}{% endif %}
+---
+
+# Conversation History (last messages)
+{% if conversation_history %}
+{{ conversation_history }}
+{% else %}
+{% endif %}
+
+---
+
+# Current User Input
+{{ user_input }}
