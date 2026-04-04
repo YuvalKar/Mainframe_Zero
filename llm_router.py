@@ -21,6 +21,8 @@ overhead when using lightweight cloud APIs.
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from core_utils.hud_streamer import send_hud_gauge
+
 
 import asyncio
 import gc
@@ -39,23 +41,28 @@ AVAILABLE_MODELS = {
     "Gemini 2.5 Flash": {     # The first is the defoult model
         "family": "gemini",
         "name": "gemini-2.5-flash",
-        "description" : "best for quick chat"
+        "description" : "best for quick chat",
+        "max_tokens": 50000
     },
     "Gemini 2.5 Flash Lite": {
         "family": "gemini",
         "name": "gemini-2.5-flash-lite",
-        "description" : "for quick chat"
+        "description" : "for quick chat",
+        "max_tokens": 50000
+
     },
     "Gemini 2.5 Pro": {
         "family": "gemini",
         "name": "gemini-2.5-pro",
-        "description" : "best for code"
+        "description" : "best for code",
+        "max_tokens": 100000
     },
     "Blender Local LLM": {
         "family": "local",
         "name": "BlenderLLM.Q4_K_M",
         "path": r"C:\LocalAI\Models\BlenderLLM.Q4_K_M.gguf",
-        "description" : "best Blender script generator"
+        "description" : "best Blender script generator",
+        "max_tokens": 4096
     }
     # You can add more models here in the future
 }
@@ -111,7 +118,18 @@ async def _call_gemini_api(model_config: dict, prompt: str, system_rules: str) -
         )
 
     response = await asyncio.to_thread(_call_gemini)    
-    
+
+    # Extract and print token usage details safely
+    if response and hasattr(response, 'usage_metadata') and response.usage_metadata:
+        prompt_tokens = response.usage_metadata.prompt_token_count
+
+        # Calculate and print the usage percentage based on the model's safe limit
+        max_tokens = model_config.get("max_tokens")
+        usage_percent = (prompt_tokens / max_tokens) * 100
+        print(f"Capacity Used: {usage_percent:.2f}% (Safe Limit: {max_tokens})")
+            
+        send_hud_gauge("PROMPT", usage_percent, "Prompt Tokens")
+
     # Ensure we return only the text, not the entire response object
     if not response or not response.text:
         return ""
@@ -163,14 +181,28 @@ async def _call_local_llama(model_config: dict, prompt: str, system_rules: str) 
             temperature=0.1,
             max_tokens=1024,
             response_format={"type": "json_object"}
-                                # "schema": agent_response_schema
+            # "schema": agent_response_schema
         )
 
     response = await asyncio.to_thread(_generate_local)
-    
-    # Extract the text content from the llama_cpp response structure
-    try:
-        return response['choices'][0]['message']['content']
-    except (KeyError, IndexError) as e:
-        print(f"[Router Error] Failed to extract text from local model: {e}")
-        return ""
+
+    # Extract token usage from the local model's response dict
+    if response and isinstance(response, dict) and "usage" in response:
+        usage_data = response["usage"]
+        prompt_tokens = usage_data.get("prompt_tokens", 0)
+
+        # Calculate and update HUD based on the model's safe limit
+        max_tokens = model_config.get("max_tokens")
+        if max_tokens and prompt_tokens > 0:
+            usage_percent = (prompt_tokens / max_tokens) * 100
+            print(f"Capacity Used (Local): {usage_percent:.2f}% (Safe Limit: {max_tokens})")
+            
+            send_hud_gauge("PROMPT", usage_percent, "Prompt Tokens")
+
+    # Ensure we extract the text content from the standard choices array
+    if isinstance(response, dict) and "choices" in response:
+        choices = response["choices"]
+        if choices and "message" in choices[0]:
+            return choices[0]["message"].get("content", "")
+            
+    return ""

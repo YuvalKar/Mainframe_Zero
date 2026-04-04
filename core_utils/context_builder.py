@@ -3,11 +3,9 @@ import re
 
 # Import utility functions
 from core_utils.actions_ops import get_available_actions
-from core_utils.hud_streamer import send_hud_timer, send_hud_text
 
 # Import updated attention ops
 from core_utils.attention_ops import update_session_attention
-from core_utils.hud_streamer import send_hud_message
 from database.db_chat_history import get_recent_chat_history
 from senses.sense_get_installed_apps import execute as get_installed_apps
 

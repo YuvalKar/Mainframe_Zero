@@ -3,6 +3,8 @@ import asyncio
 
 from dotenv import load_dotenv
 
+from core_utils.hud_streamer import send_hud_error
+
 # Import utility functions
 from core_utils.context_builder import get_system_prompt
 from core_utils.actions_ops import execute_single_action
@@ -158,9 +160,11 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
 
         except json.JSONDecodeError:
             await log_and_emit("error", f"Failed to parse AI response as JSON. Raw response: {ai_response_text}")
+            send_hud_error("mz_core_error", "Failed to parse AI response. Check logs for details.")
             break
         except Exception as e:
             await log_and_emit("error", f"System Error during agentic loop: {str(e)}")
+            send_hud_error("mz_core_error", "An unexpected error occurred. Check logs for details.")
             break
             
     log_pipeline_step(log_file, "backend_loop_completed", {"total_loops": loop_counter})

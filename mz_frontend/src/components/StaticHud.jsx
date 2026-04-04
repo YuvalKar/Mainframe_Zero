@@ -18,34 +18,37 @@ const PlaceholderBg = ({ color }) => (
 );
 
 // --- Widgets ---
-const TextWidget = ({ data, level, defaultColor }) => {
+const TextWidget = ({ id, data, level, defaultColor, onRemove }) => {
   const color = level === 'error' ? '#ff4a4a' : level === 'warning' ? '#ffcc00' : defaultColor;
   const textValue = data?.value || "NO TEXT";
 
+  useEffect(() => {
+    // Set a timer to remove the widget after 10 seconds
+    const timerId = setTimeout(() => {
+      onRemove?.(id);
+    }, 10000);
+
+    // If data changes (upsert), the effect cleans up and restarts the timer
+    return () => clearTimeout(timerId);
+  }, [id, data, onRemove]);
+
   return (
     <div className="hud-widget-wrapper widget-text-wrapper" style={{ color }}>
-    
       <div className='hud-text-svg-container'>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -5 994 90" preserveAspectRatio="none">
-          {/* Using inline style block for dynamic color injection */}
           <style>{`
             .blue-fill { fill: ${defaultColor}; opacity: 0.5; }
             .outline { fill: none; stroke: ${defaultColor}; stroke-width: 1px; }
           `}</style>
-
           <g transform="translate(2, -2)">
             <path className="blue-fill" d="M115.4 68 H96 L109.3 45 H128.7 Z" />
             <path className="blue-fill" d="M140.4 68 H121 L134.3 45 H153.7 Z" />
             <path className="blue-fill" d="M166.4 68 H147 L160.3 45 H179.7 Z" />
             <path fill={color} opacity="0.8" d="M890 73 V27 H913 V59.7 Z" />
             <path className="blue-fill" d="M719 23 H541 L554.3 0 H705.7 Z" />
-
             <path d="M195.5 27 H885 V73 H168.9 Z" fill="#313131" opacity="0.75" stroke={defaultColor} strokeWidth="1" />
-
             <path className="outline" d="M172 72 H34" />
             <path className="outline" d="M759 78.5 H919 V40" />
-
-            {/* The circle was moved up to align with the bottom path */}
             <circle cx="18" cy="72" r="7.5" fill={color} stroke={color} strokeWidth="1" />
           </g>
         </svg>
@@ -58,8 +61,11 @@ const TextWidget = ({ data, level, defaultColor }) => {
 };
 
 const GaugeWidget = ({ data, defaultColor }) => {
-  const val = typeof data?.value === 'number' ? data.value : 50;
+  const val = typeof data?.value === 'number' ? data.value : 0;
   const label = data?.label || 'LOD';
+
+  // round val to 1 decimal place for display
+  const displayVal = Math.round(val * 10) / 10;
 
   return (
     <div className="hud-widget-wrapper widget-gauge-wrapper" style={{ color: defaultColor }}>
@@ -67,7 +73,7 @@ const GaugeWidget = ({ data, defaultColor }) => {
       <div className="hud-widget-background" style={{ borderColor: defaultColor }} />
       <div className="hud-widget-content">
         <div className="hud-text-truncate widget-gauge-label">
-          {label}: {val}%
+          {label}: {displayVal}%
         </div>
         <div className="widget-gauge-track">
           <div className="widget-gauge-fill" style={{ background: defaultColor, width: `${val}%` }} />
@@ -321,9 +327,16 @@ export default function StaticHud({ appColor = "#4da8da", latestMessage }) {
         </div>        
 
         <div className="hud-anchor-zone zone-mid">
-           {textEntities.map(([id, entity]) => (
-             <TextWidget key={id} data={entity.payload} level={entity.level} defaultColor={appColor} />
-           ))}
+          {textEntities.map(([id, entity]) => (
+            <TextWidget 
+              key={id} 
+              id={id}
+              data={entity.payload} 
+              level={entity.level} 
+              defaultColor={appColor} 
+              onRemove={removeEntity} 
+            />
+          ))}
         </div>
 
         <div className="hud-anchor-zone zone-bottom">
