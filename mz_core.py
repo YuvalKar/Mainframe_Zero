@@ -188,6 +188,7 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
                 ###############################
 
             if execution_summary:
+                # TODO: prompt this properly, save it so we will be able to do another loop reflecting on the results of the actions
                 # add to prompt for the next loop so the AI can reflect on the results of its actions
                 current_prompt += "\n\n[System Sensory Feedback]\n" + "\n".join(execution_summary)
                 current_prompt += "\n\n[System Directive: Continue executing or respond to the user based on the original request.]"

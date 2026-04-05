@@ -65,6 +65,7 @@ def format_attention_to_prompt(session_context: dict) -> str:
 
 #########################################
 def enrich_prompt(session_context: dict, user_input: str) -> str:
+
     enriched_prompt = ""
     session_id = session_context.get("session_id")
     
@@ -136,6 +137,8 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     enriched_prompt += "\n\n[System Context: Special SYS Action - get_API_descriptions]\n"
     enriched_prompt += get_API_descriptions + "\n\n"
 
+    get_senantic_RAG = ""
+
     if app_name:
         # if avaliable semantics - search by free text to get interface, include RAG query for relevant functions in the semantic cortex
         apps = get_installed_apps()
@@ -161,9 +164,17 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
 
 
     # -------------------------------
-    app_role_context = "app_role_context" # TODO: later
+    # app_role_context
+    context_file_path = os.path.join("apps", app_name, "app_role_context.md")
+    app_role_context = ""
 
-
+    # Try to read the context file safely
+    try:
+        with open(context_file_path, "r", encoding="utf-8") as f:
+            app_role_context = f.read()
+    except FileNotFoundError:
+        # If the app doesn't have a specific context file, we just leave it empty
+        pass
 
     # TODO: optimise, read only once
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
@@ -175,10 +186,14 @@ def enrich_prompt(session_context: dict, user_input: str) -> str:
     conversation_history = json.dumps(history, indent=2, sort_keys=False)
     context_data = session_context.get("client_context", {})
 
+    # Combine senses and skills for the template
+    available_actions = {**current_senses, **current_skills}
+
     # Render the template with all our gathered data
     enriched_prompt_with_template = template.render(
             app_role_context=app_role_context,
-            available_actions=current_senses,
+            available_actions=available_actions,
+            get_senantic_RAG=get_senantic_RAG,
             context_data=context_data,
             conversation_history=conversation_history,
             user_input=user_input,

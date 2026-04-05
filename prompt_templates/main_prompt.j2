@@ -1,4 +1,3 @@
-# Role Context
 {{ app_role_context }}
 
 # System Context: Available Actions
@@ -18,6 +17,14 @@ Before using these actions, call `get_API_descriptions` with the names of the ac
 Once you get the API description for an action, you can call the action directly by its name and passing the required parameters.
 * **Name:** `get_API_descriptions`
 * **Input:** `action_names` (list): A list of action names (SKILLS / SENSES) for which to retrieve their API descriptions.
+
+
+{% if get_senantic_RAG | length > 2 %}
+---
+# System Context: Special SYS Action - get_senantic_RAG
+{{ get_senantic_RAG }}
+{% endif %}
+
 
 {% if context_data and (context_data.activeDocument or context_data.attentionShelf) %}
 ---

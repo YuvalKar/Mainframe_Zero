@@ -1,6 +1,8 @@
 import os
 from psycopg2 import pool
 from dotenv import load_dotenv
+from core_utils.hud_streamer import send_hud_error, send_hud_text
+
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +26,7 @@ def _init_pool():
                 password=os.getenv("DB_PASSWORD", "")
             )
         except Exception as e:
+            send_hud_error("DB_CONNECTION", f"Failed to initialize connection pool - {e}", code=2802552)
             print(f"[Memory DB Error: Failed to initialize connection pool - {e}]")
 
 def get_db_connection():
@@ -33,6 +36,7 @@ def get_db_connection():
         try:
             return _connection_pool.getconn()
         except Exception as e:
+            send_hud_error("DB_CONNECTION", f"Failed to get connection from pool - {e}", code=3802552)
             print(f"[Memory DB Error: Failed to get connection from pool - {e}]")
     return None
 
@@ -43,12 +47,14 @@ def release_db_connection(conn):
         try:
             _connection_pool.putconn(conn)
         except Exception as e:
+            send_hud_error("DB_CONNECTION", f"Failed to release connection back to pool - {e}", code=4802552)
             print(f"[Memory DB Error: Failed to release connection - {e}]")
 
 def get_local_model():
     """Load and return the local BAAI/bge-m3 model using Lazy Loading."""
     global _local_model
     if _local_model is None:
+        send_hud_text("LOCAL_MODEL", "Loading local model (this might take a bit longer the first time)", level="warning")
         print("Loading BAAI/bge-m3 model (this might take a bit longer to download the first time)...")
         from sentence_transformers import SentenceTransformer
         _local_model = SentenceTransformer('BAAI/bge-m3')
