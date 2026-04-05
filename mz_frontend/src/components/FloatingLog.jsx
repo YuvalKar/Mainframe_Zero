@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import './FloatingLog.css';
 
+// Maximum number of logs to display in the floating window
+const MAX_VISIBLE_LOGS = 10;
+
 export default function FloatingLog({ systemLogs }) {
   // State for visibility controlled by Ctrl+Shift+Q
   const [isVisible, setIsVisible] = useState(false);
@@ -30,7 +33,7 @@ export default function FloatingLog({ systemLogs }) {
   // Auto-scroll when new logs arrive
   useEffect(() => {
     if (messagesEndRef.current && isVisible) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [systemLogs, isVisible]);
 
@@ -110,7 +113,7 @@ export default function FloatingLog({ systemLogs }) {
       </div>
       
       <div className="floating-log-container">
-        {systemLogs.map((log, index) => (
+        {systemLogs.slice(-MAX_VISIBLE_LOGS).map((log, index) => (
           // Filter out spammy update types if needed, otherwise show all
           (log.type === "hud_update") ? null : (
             <div key={index} className="floating-log-entry">

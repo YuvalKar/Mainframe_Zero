@@ -7,6 +7,8 @@ import DocumentViewer from './components/DocumentViewer'
 import FloatingLog from './components/FloatingLog'
 import StaticHud from './components/StaticHud'
 
+const MAX_LOGS_IN_MEMORY = 50;
+
 // --- Icons for the Tool Tabs ---
 const ExplorerIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -64,7 +66,13 @@ function App() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setSystemLogs(prevLogs => [...prevLogs, data]);
+        
+        setSystemLogs(prevLogs => {
+          const updatedLogs = [...prevLogs, data];
+          // Keep only the last MAX_LOGS_IN_MEMORY logs in memory to prevent memory leaks
+          return updatedLogs.slice(-MAX_LOGS_IN_MEMORY); 
+        });
+        
         setMessageQueue(prev => [...prev, data]);
       } catch (err) {
         console.error("Error parsing WebSocket message:", err);
