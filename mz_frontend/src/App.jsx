@@ -134,7 +134,7 @@ function App() {
       {isAppExpanded && (
         <>
           <StaticHud appColor={appColor} latestMessage={latestMessage} />
-          <FloatingLog systemLogs={systemLogs} />
+          <FloatingLog systemLogs={systemLogs} appColor={appColor} />
         </>
       )}
 

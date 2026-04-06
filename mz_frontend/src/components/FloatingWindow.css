@@ -1,0 +1,112 @@
+/* src/components/floating/FloatingWindow.css */
+
+/* --- Main Wrapper --- */
+.fw-main-wrapper {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  z-index: 9990; /* Float high, but below the Static HUD */
+  /* CRITICAL: Make the overall box transparent to mouse events 
+     so it doesn't block clicks to the desktop/underlying UI */
+  pointer-events: none; 
+  user-select: none;
+}
+
+/* Ensure text inherits our standard app coloring */
+.fw-main-wrapper * {
+  color: var(--text-main);
+}
+
+/* --- 1. Absolute Top Layer --- */
+.fw-absolute-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+  pointer-events: none; /* Let clicks pass through the general top area */
+}
+
+/* The actual draggable handle */
+.fw-drag-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; 
+  /* React inline styles will toggle cursor between grab/grabbing */
+  /* CRITICAL: Catch mouse events so dragging works */
+  pointer-events: auto; 
+}
+
+/* The standalone close button */
+.fw-close-btn {
+  position: absolute;
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 20; 
+  color: #ffffff;
+  transition: all 0.2s ease;
+  /* CRITICAL: Catch mouse events so clicking works */
+  pointer-events: auto; 
+}
+
+.fw-close-btn:hover {
+  color: #ef5350;
+  text-shadow: 0 0 8px rgba(239, 83, 80, 0.8);
+}
+
+/* --- 2. Dynamic Scrollable Content Area --- */
+.fw-content-box {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto; /* Allow scrolling if content exceeds developer-defined max-height */
+  overflow-x: hidden;
+  background-color: rgba(30, 30, 30, 0.85); /* Dark transparent background */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 5;
+  /* Use the dynamic color passed from React for a subtle border */
+  border: 1px solid var(--fw-theme-color); 
+  border-radius: 4px;
+  /* CRITICAL: Re-enable mouse events for scrolling, selecting text, and clicking inside */
+  pointer-events: auto; 
+  /* Standardize text selection inside the content box */
+  user-select: text; 
+}
+
+/* Custom minimal scrollbar matching the HUD aesthetic */
+.fw-content-box::-webkit-scrollbar {
+  width: 4px;
+}
+.fw-content-box::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+.fw-content-box::-webkit-scrollbar-thumb {
+  background: var(--fw-theme-color);
+  border-radius: 2px;
+}
+
+/* --- 3. Bottom Flowing Layer --- */
+.fw-bottom-wrapper {
+  position: relative;
+  width: 100%;
+  pointer-events: none; /* Just a structural container */
+  z-index: 10;
+}
+
+/* Inner wrapper for precise absolute positioning */
+.fw-bottom-absolute-nudge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none; /* Decorations should not catch clicks */
+}

@@ -1,21 +1,13 @@
 // src/components/FloatingLog.jsx
 import { useState, useEffect, useRef } from 'react';
+import FloatingWindow from './FloatingWindow';
 import './FloatingLog.css';
 
-// Maximum number of logs to display in the floating window
 const MAX_VISIBLE_LOGS = 10;
 
-export default function FloatingLog({ systemLogs }) {
+export default function FloatingLog({ systemLogs, appColor }) {
   // State for visibility controlled by Ctrl+Shift+Q
   const [isVisible, setIsVisible] = useState(false);
-  
-  // State and refs for dragging logic
-  const [position, setPosition] = useState({ x: 30, y: 70 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef(null);
-  const offset = useRef({ x: 0, y: 0 });
-  
-  // Ref for auto-scrolling to bottom
   const messagesEndRef = useRef(null);
 
   // Handle Ctrl+Shift+Q toggle
@@ -37,84 +29,40 @@ export default function FloatingLog({ systemLogs }) {
     }
   }, [systemLogs, isVisible]);
 
-  // --- Dragging Logic ---
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    // Calculate the offset between the mouse click and the top-left of the component
-    offset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    };
-  };
+  // Define the SVG decorations
+  const loggerTopDeco = (
+    <img 
+      src="Logger-top.svg"
+      alt="Logger Top" 
+      style={{ width: '100%', display: 'block', pointerEvents: 'none' }} 
+    />
+  );
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    setPosition({
-      x: e.clientX - offset.current.x,
-      y: e.clientY - offset.current.y
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Attach and detach global mouse events for smooth dragging
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]); // Re-bind when dragging state changes
-
-  // If not visible, do not render anything to save resources
-  if (!isVisible) return null;
+  const loggerBottomDeco = (
+    <img 
+      src="Logger-bottom.svg" 
+      alt="Logger Bottom" 
+      style={{ width: '100%', display: 'block', pointerEvents: 'none' }} 
+    />
+  );
 
   return (
-    <div 
-      className="floating-log-overlay"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
-      }}
+    <FloatingWindow
+      isVisible={isVisible}
+      onClose={() => setIsVisible(false)}
+      initialPosition={{ x: 30, y: 70 }}
+      width="700px"
+      maxContentHeight="450px"
+      color={appColor || "#4da8da"} // Fallback color, though logger uses its own SVGs
+      topDecoration={loggerTopDeco}
+      bottomDecoration={loggerBottomDeco}
+      // Nudge the close button to sit nicely on the diagonal part of your specific SVG
+      closeButtonPos={{ top: -10, right: 35 }} 
+      contentMarginTop={5} // Just a tiny gap from the top SVG
+      className="floating-log-specific"
     >
-      {/* Header acts as the drag handle */}
-      {/* TODO:add svg here? */}
-      
-      <div 
-        className="floating-log-header" 
-        onMouseDown={handleMouseDown}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        {/* Render the SVG image */}
-        <img 
-          src="Logger-top.svg"
-          alt="Logger Top Decoration" 
-          className="floating-log-top-svg" 
-        />
-        
-        {/* Hide the text because the SVG already says 'SYS LOG' */}
-        {/* <span className="floating-log-title">SYS.FULL_LOG</span> */}
-
-        <button 
-          className="floating-log-close" 
-          onClick={() => setIsVisible(false)}
-          title="Close (Ctrl+Shift+Q)"
-        >
-          ×
-        </button>
-      </div>
-      
-      <div className="floating-log-container">
+      <div className="floating-log-messages">
         {systemLogs.slice(-MAX_VISIBLE_LOGS).map((log, index) => (
-          // Filter out spammy update types if needed, otherwise show all
           (log.type === "hud_update") ? null : (
             <div key={index} className="floating-log-entry">
               {log.type && (
@@ -130,13 +78,6 @@ export default function FloatingLog({ systemLogs }) {
         ))}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Bottom decoration */}
-      <img 
-        src="Logger-bottom.svg" 
-        alt="Logger Bottom" 
-        className="floating-log-bottom-svg" 
-      />
-    </div>
+    </FloatingWindow>
   );
 }
