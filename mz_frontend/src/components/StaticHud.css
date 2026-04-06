@@ -21,8 +21,13 @@
   width: 100vw;
   height: 100vh;
   /* Allow clicks to pass through to the app */
-  pointer-events: none; 
+  pointer-events: none !important;
   z-index: 9998; 
+}
+
+/* Ensure all child elements also ignore pointer events */
+.static-hud-overlay * {
+  pointer-events: none !important;
 }
 
 /* Animations for decorations (legacy) */

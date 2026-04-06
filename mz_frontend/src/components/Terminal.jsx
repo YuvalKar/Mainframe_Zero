@@ -1,7 +1,7 @@
 // src/components/Terminal.jsx
 import { useState, useRef, useEffect } from 'react';
 import './Terminal.css'; // Make sure the path matches where you saved the CSS file
-
+import FloatingWindow from './FloatingWindow';
 // --- Simple Minimalist Icons ---
 
 const UserIcon = () => (
@@ -21,7 +21,7 @@ const BotIcon = () => (
   </svg>
 );
 
-export default function Terminal({ attentionShelf, setAttentionShelf, sendCommand, latestMessage, isConnected, setAppColor }) {
+export default function Terminal({ attentionShelf, setAttentionShelf, sendCommand, latestMessage, isConnected, setAppColor, appColor, onClose, isVisible }) {
   const [chatLog, setChatLog] = useState([]);
   const [userInput, setUserInput] = useState("");
 
@@ -167,128 +167,141 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     setUserInput("");
   };
 
-  return (
-    <div className="terminal-container">
-      
-      {/* Top Bar / Header */}
-      <div className="terminal-header">
-        <img src="/nBaya_logo.svg" alt="nBaya logo" className="terminal-logo" />
-        
-        <div className="header-controls">
-          {!isConnected && (
-            <span className="status-offline">
-              <span className="status-dot"></span>
-              Offline
-            </span>
-          )}
-            
-          {activeApp && installedApps[activeApp] && installedApps[activeApp].icon &&(
-            <img
-              src={installedApps[activeApp].icon}
-              alt={`${installedApps[activeApp].display_name} Logo`}
-              className="app-icon"
-            /> 
-          )}
-          
-          <select
-            value={activeApp}
-            onChange={handleAppChange}
-            disabled={!isConnected || Object.keys(installedApps).length === 0}
-            className="custom-select"
-            title="Select Active App"
-          >
-            {Object.keys(installedApps).length === 0 ? (
-              <option value="">Loading apps...</option>
-            ) : (
-              Object.entries(installedApps).map(([appName, appDetails]) => (
-                <option key={appName} value={appName}>{appDetails.display_name || appName}</option>
-              ))
-            )}
-          </select>
-
-          <select 
-            value={selectedModel} 
-            onChange={handleModelChange}
-            disabled={!isConnected || Object.keys(availableModels).length === 0}
-            className="custom-select"
-            title="Select AI Model"
-          >
-            {Object.keys(availableModels).length === 0 ? (
-              <option value="">Loading models...</option>
-            ) : (
-              Object.entries(availableModels).map(([modelKey, modelDetails]) => (
-                <option 
-                  key={modelKey} 
-                  value={modelKey} 
-                  title={modelDetails.description || ""}
-                >
-                  {modelKey}
-                </option>
-              ))
-            )}
-          </select>
+return (
+    <FloatingWindow
+      isVisible={isVisible}
+      onClose={onClose}
+      initialPosition={{ x: 50, y: 150 }}
+      width="600px" // Standard width for the terminal
+      color={appColor || "#4da8da"}
+      contentMarginTop={24} // Height of our new drag bar
+      closeButtonPos={{ top: 2, right: 10 }}
+      className="terminal-floating-instance"
+      topDecoration={
+        // This acts as our drag handle, sitting above the actual terminal
+        <div className="terminal-drag-bar">
+          <span>SYS.TERMINAL // ONLINE</span>
         </div>
-      </div>
-
-      {/* Chat Area */}
-      <div className="chat-area">
-        {chatLog.length === 0 && (
-          <div className="empty-state">
-            <h3>How can I help you today?</h3>
-            <p>Select files from the explorer or just start typing.</p>
-          </div>
-        )}
-
-      {chatLog.map((log, index) => {
-          const isUser = log.type === "user";
-          const rowClass = isUser ? "user" : "bot";
+      }
+    >
+      {/* THIS IS YOUR EXACT ORIGINAL HTML STRUCTURE */}
+      <div className="terminal-container">
+        
+        {/* Top Bar / Header */}
+        <div className="terminal-header">
+          <img src="/nBaya_logo.svg" alt="nBaya logo" className="terminal-logo" />
           
-          return (
-            // Re-added the message-row wrapper to fix left/right alignment
-            <div key={index} className={`message-row ${rowClass}`}>
-              <div className="message-content-wrapper">
-                              
-                {/* Message Bubble */}
-                <div className="message-bubble">
-                  {/* Labels completely removed, rendering only the text */}
-                  <div className={`message-text ${log.type === "error" ? "error" : "normal"}`}>
-                    {log.content}
+          <div className="header-controls">
+            {!isConnected && (
+              <span className="status-offline">
+                <span className="status-dot"></span>
+                Offline
+              </span>
+            )}
+              
+            {activeApp && installedApps[activeApp] && installedApps[activeApp].icon &&(
+              <img
+                src={installedApps[activeApp].icon}
+                alt={`${installedApps[activeApp].display_name} Logo`}
+                className="app-icon"
+              /> 
+            )}
+            
+            <select
+              value={activeApp}
+              onChange={handleAppChange}
+              disabled={!isConnected || Object.keys(installedApps).length === 0}
+              className="custom-select"
+              title="Select Active App"
+            >
+              {Object.keys(installedApps).length === 0 ? (
+                <option value="">Loading apps...</option>
+              ) : (
+                Object.entries(installedApps).map(([appName, appDetails]) => (
+                  <option key={appName} value={appName}>{appDetails.display_name || appName}</option>
+                ))
+              )}
+            </select>
+
+            <select 
+              value={selectedModel} 
+              onChange={handleModelChange}
+              disabled={!isConnected || Object.keys(availableModels).length === 0}
+              className="custom-select"
+              title="Select AI Model"
+            >
+              {Object.keys(availableModels).length === 0 ? (
+                <option value="">Loading models...</option>
+              ) : (
+                Object.entries(availableModels).map(([modelKey, modelDetails]) => (
+                  <option 
+                    key={modelKey} 
+                    value={modelKey} 
+                    title={modelDetails.description || ""}
+                  >
+                    {modelKey}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className="chat-area">
+          {chatLog.length === 0 && (
+            <div className="empty-state">
+              <h3>How can I help you today?</h3>
+              <p>Select files from the explorer or just start typing.</p>
+            </div>
+          )}
+
+        {chatLog.map((log, index) => {
+            const isUser = log.type === "user";
+            const rowClass = isUser ? "user" : "bot";
+            
+            return (
+              <div key={index} className={`message-row ${rowClass}`}>
+                <div className="message-content-wrapper">
+                  <div className="message-bubble">
+                    <div className={`message-text ${log.type === "error" ? "error" : "normal"}`}>
+                      {log.content}
+                    </div>
                   </div>
                 </div>
-                
               </div>
-            </div>
-          );
-        })}
-        
-        <div ref={messagesEndRef} />
-      </div>
+            );
+          })}
+          
+          <div ref={messagesEndRef} />
+        </div>
 
-      {/* Input Area */}
-      <div className="input-area">
-        <div className="input-wrapper">
-          <input 
-            type="text" 
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder={isConnected ? "Message Mainframe..." : "Connecting..."}
-            disabled={!isConnected}
-            className="chat-input"
-          />
-          <button 
-            onClick={sendMessage} 
-            disabled={!isConnected || !userInput.trim()}
-            className="send-button"
-            title="Send message"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
+        {/* Input Area */}
+        <div className="input-area">
+          <div className="input-wrapper">
+            <input 
+              type="text" 
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder={isConnected ? "Message Mainframe..." : "Connecting..."}
+              disabled={!isConnected}
+              className="chat-input"
+            />
+            <button 
+              onClick={sendMessage} 
+              disabled={!isConnected || !userInput.trim()}
+              className="send-button"
+              title="Send message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </FloatingWindow>
   );
 }

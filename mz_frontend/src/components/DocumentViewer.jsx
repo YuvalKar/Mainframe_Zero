@@ -1,47 +1,43 @@
 // src/components/DocumentViewer.jsx
 import { useState, useEffect } from 'react';
-
-// Import the official Monaco Editor for React
 import Editor from '@monaco-editor/react';
-import './DocumentViewer.css'; // Added import for our clean styles
+import FloatingWindow from './FloatingWindow';
+import './DocumentViewer.css'; 
 
-export default function DocumentViewer({ activeDocument, sendCommand, latestMessage, isConnected, onSelectionChange }) {
+export default function DocumentViewer({ 
+  activeDocument, 
+  sendCommand, 
+  latestMessage, 
+  isConnected, 
+  onSelectionChange,
+  isVisible, 
+  onClose,
+  appColor
+}) {
   const [fileContent, setFileContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Helper function to determine the language from the file extension
   const getLanguage = (filename) => {
     if (!filename) return 'text';
     const ext = filename.split('.').pop().toLowerCase();
     
     const languageMap = {
-      'js': 'javascript',
-      'jsx': 'jsx',
-      'py': 'python',
-      'md': 'markdown',
-      'json': 'json',
-      'html': 'html',
-      'css': 'css'
+      'js': 'javascript', 'jsx': 'jsx', 'py': 'python',
+      'md': 'markdown', 'json': 'json', 'html': 'html', 'css': 'css'
     };
     
-    return languageMap[ext] || 'text'; // Fallback to plain text if unknown
+    return languageMap[ext] || 'text'; 
   };
 
-  // Native Monaco editor selection handler
   const handleEditorDidMount = (editor, monaco) => {
-    // Listen to selection changes directly from the editor instance
     editor.onDidChangeCursorSelection((e) => {
-      // Get the exact text based on the user's selection range
       const selectedText = editor.getModel().getValueInRange(e.selection).trim();
-      
-      // Send it up to App.jsx just like before
       if (onSelectionChange) {
         onSelectionChange(selectedText);
       }
     });
   };
 
-  // Fetch file content when activeDocument changes
   useEffect(() => {
     if (isConnected && activeDocument) {
       setIsLoading(true);
@@ -55,13 +51,11 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     }
   }, [activeDocument, isConnected]);
 
-  // Listen for the incoming file content
   useEffect(() => {
     if (!latestMessage) return;
 
     if (latestMessage.type === "direct_result" && latestMessage.action_name === "sense_read_text_file") {
       const result = latestMessage.data;
-      
       if (result.success) {
         setFileContent(result.content); 
       } else {
@@ -71,45 +65,66 @@ export default function DocumentViewer({ activeDocument, sendCommand, latestMess
     }
   }, [latestMessage]);
 
-  if (!activeDocument) {
-    return (
-      <div className="document-viewer-empty">
-        Select a file from the shelf to preview...
-      </div>
-    );
-  }
+  // Center the viewer slightly, offset from the terminal
+  const safeStartX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth / 2 - 250) : 200;
 
   return (
-    <div className="document-viewer-container">
-      <div className="document-viewer-header">
-        {activeDocument.name}
-      </div>
-      
-      <div className="document-viewer-content">
-        {isLoading ? (
-          <div className="document-viewer-loading">
-            Loading content...
+    <FloatingWindow
+      isVisible={isVisible}
+      onClose={onClose}
+      initialPosition={{ x: safeStartX, y: 100 }} 
+      width="650px" // Wider than explorer for code readability
+      color={appColor || "#4da8da"}
+      contentMarginTop={24}
+      closeButtonPos={{ top: 2, right: 10 }}
+      className="viewer-floating-instance"
+      topDecoration={
+        <div className="viewer-drag-bar">
+          <span>SYS.VIEWER</span>
+        </div>
+      }
+    >
+      <div className="document-viewer-container">
+        
+        {!activeDocument ? (
+          <div className="document-viewer-empty">
+            Select a file from the shelf to preview...
           </div>
         ) : (
-          <Editor
-            height="100%"
-            language={getLanguage(activeDocument.name)}
-            theme="vs-dark" // Switched to Monaco's dark theme
-            value={fileContent}
-            onMount={handleEditorDidMount}
-            options={{
-              readOnly: true,
-              minimap: { enabled: false },
-              wordWrap: 'on',
-              fontSize: 12,
-              // Apply a square, technical font family for the code editor
-              fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
-              // Cleaner look for the editor lines
-              renderLineHighlight: 'none' 
-            }}
-          />
+          <>
+            <div className="document-viewer-header">
+              {activeDocument.name}
+            </div>
+            
+            <div className="document-viewer-content">
+              {isLoading ? (
+                <div className="document-viewer-loading">
+                  Loading content...
+                </div>
+              ) : (
+                /* BULLETPROOF MONACO WRAPPER: Bypasses nested flexbox height calculation bugs */
+                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
+                  <Editor
+                    height="100%"
+                    language={getLanguage(activeDocument.name)}
+                    theme="vs-dark" 
+                    value={fileContent}
+                    onMount={handleEditorDidMount}
+                    options={{
+                      readOnly: true,
+                      minimap: { enabled: false },
+                      wordWrap: 'on',
+                      fontSize: 12,
+                      fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
+                      renderLineHighlight: 'none' 
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
-    </div>
+    </FloatingWindow>
   );
 }

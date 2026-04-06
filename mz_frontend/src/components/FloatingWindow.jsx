@@ -59,18 +59,17 @@ export default function FloatingWindow({
     };
   }, [isDragging]);
 
-  if (!isVisible) return null;
-
   return (
-    <div 
-      className={`fw-main-wrapper ${className}`}
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: width,
-        '--fw-theme-color': color // Expose color to CSS and SVG children
-      }}
-    >
+      <div 
+        className={`fw-main-wrapper ${className}`}
+        style={{
+          display: isVisible ? 'flex' : 'none', /* <--- הוספנו את השורה הזו */
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          width: width,
+          '--fw-theme-color': color
+        }}
+      >
       {/* --- 1. Absolute Top Layer (Drag Zone & Close Button) --- */}
       <div className="fw-absolute-top">
         

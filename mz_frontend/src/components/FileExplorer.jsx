@@ -1,6 +1,7 @@
 // src/components/FileExplorer.jsx
 import { useState, useEffect } from 'react';
 import './FileExplorer.css'; // Make sure the CSS file is imported
+import FloatingWindow from './FloatingWindow';
 
 // --- Minimalist Inline SVG Icons ---
 
@@ -88,7 +89,10 @@ export default function FileExplorer({
   latestMessage, 
   isConnected,
   activeDocument,
-  setActiveDocument
+  setActiveDocument,
+  isVisible, 
+  onClose,
+  appColor
 }) {
   const [treeData, setTreeData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,73 +126,94 @@ export default function FileExplorer({
     }
   }, [latestMessage]); 
 
-  return (
-    <div className="explorer-container">
-      
-      {/* Explorer Section */}
-      <div className="explorer-section">
-        <h3 className="section-title">Explorer</h3>
+  // Calculate a safe starting X position to prevent rendering off-screen.
+  // Places the window 420px from the right edge, but never less than 20px from the left.
+  const safeStartX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 420) : 500;
+  
+return (
+    <FloatingWindow
+      isVisible={isVisible}
+      onClose={onClose}
+      initialPosition={{ x: safeStartX, y: 150 }} // ממקם אותו בצד ימין
+      width="380px" // סייר קבצים בדרך כלל צר יותר מטרמינל
+      color={appColor || "#4da8da"}
+      contentMarginTop={24}
+      closeButtonPos={{ top: 2, right: 10 }}
+      className="explorer-floating-instance"
+      topDecoration={
+        <div className="explorer-drag-bar">
+          <span>SYS.EXPLORER</span>
+        </div>
+      }
+    >
+      {/* --- File Explorer UI --- */}
+      <div className="explorer-container">
         
-        {isLoading ? (
-          <div className="empty-message">Scanning workspace...</div>
-        ) : treeData.length === 0 ? (
-          <div className="empty-message">No files found.</div>
-        ) : (
-          treeData.map((node, idx) => (
-            <FileTreeNode 
-              key={idx} 
-              node={node} 
-              toggleAttention={toggleAttention} 
-              attentionShelf={attentionShelf} 
-            />
-          ))
-        )}
-      </div>
-
-      {/* Attention Shelf Section */}
-      <div className="shelf-section">
-        <h3 className="section-title">
-          Attention ON ({attentionShelf.length})
-        </h3>
-        
-        {attentionShelf.length === 0 ? (
-          <div className="empty-message">No files selected...</div>
-        ) : (
-          attentionShelf.map((file, idx) => {
-            const isActive = activeDocument && activeDocument.path === file.path;
-            const itemClasses = `shelf-item ${isActive ? 'active' : ''} ${file.sent ? 'sent' : ''}`;
-            const statusClasses = `shelf-item-status ${file.sent ? 'sent' : ''}`;
-
-            return (
-              <div 
+        {/* Explorer Section */}
+        <div className="explorer-section">
+          <h3 className="section-title">Explorer</h3>
+          
+          {isLoading ? (
+            <div className="empty-message">Scanning workspace...</div>
+          ) : treeData.length === 0 ? (
+            <div className="empty-message">No files found.</div>
+          ) : (
+            treeData.map((node, idx) => (
+              <FileTreeNode 
                 key={idx} 
-                onClick={() => setActiveDocument(file)} 
-                className={itemClasses}
-              >
-                <div className="shelf-item-content">
-                  <span className={statusClasses}>
-                    {file.sent ? "✓" : "⏳"}
-                  </span>
-                  <span className="shelf-item-name">
-                    {file.name}
+                node={node} 
+                toggleAttention={toggleAttention} 
+                attentionShelf={attentionShelf} 
+              />
+            ))
+          )}
+        </div>
+
+        {/* Attention Shelf Section */}
+        <div className="shelf-section">
+          <h3 className="section-title">
+            Attention ON ({attentionShelf.length})
+          </h3>
+          
+          {attentionShelf.length === 0 ? (
+            <div className="empty-message">No files selected...</div>
+          ) : (
+            attentionShelf.map((file, idx) => {
+              const isActive = activeDocument && activeDocument.path === file.path;
+              const itemClasses = `shelf-item ${isActive ? 'active' : ''} ${file.sent ? 'sent' : ''}`;
+              const statusClasses = `shelf-item-status ${file.sent ? 'sent' : ''}`;
+
+              return (
+                <div 
+                  key={idx} 
+                  onClick={() => setActiveDocument(file)} 
+                  className={itemClasses}
+                >
+                  <div className="shelf-item-content">
+                    <span className={statusClasses}>
+                      {file.sent ? "✓" : "⏳"}
+                    </span>
+                    <span className="shelf-item-name">
+                      {file.name}
+                    </span>
+                  </div>
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleAttention(file);
+                    }} 
+                    className="shelf-item-remove"
+                    title="Remove"
+                  >
+                    ×
                   </span>
                 </div>
-                <span 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAttention(file);
-                  }} 
-                  className="shelf-item-remove"
-                  title="Remove"
-                >
-                  ×
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
+              );
+            })
+          )}
+        </div>
 
-    </div>
+      </div>
+    </FloatingWindow>
   );
 }

@@ -69,6 +69,11 @@ body {
   width: 100vw;
   overflow: hidden;
   background-color: transparent;
+  pointer-events: none; /* Allow clicks to pass through to floating windows */
+}
+
+.app-container > * {
+  pointer-events: auto;
 }
 
 /* Shared styles for all columns */

@@ -39,8 +39,15 @@ function App() {
 // --- UI Layout State ---
   const [activeToolTab, setActiveToolTab] = useState('explorer'); 
   const [showTerminal, setShowTerminal] = useState(true);
-  const [showToolsPanel, setShowToolsPanel] = useState(true);
+  const [showExplorer, setShowExplorer] = useState(true);
+  const [showViewer, setShowViewer] = useState(false);
   
+// Helper function to handle file selection AND open the viewer
+  const handleDocumentSelect = (file) => {
+    setActiveDocument(file);
+    setShowViewer(true); 
+  };
+
   // Global state to track if the entire app is expanded or folded
   const [isAppExpanded, setIsAppExpanded] = useState(false);
 
@@ -130,7 +137,7 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* Render HUD and Logs ONLY if the app is expanded */}
+      {/* HUD Layers */}
       {isAppExpanded && (
         <>
           <StaticHud appColor={appColor} latestMessage={latestMessage} />
@@ -139,73 +146,54 @@ function App() {
       )}
 
       {/* Pass the state and the toggle function down to SeedLogo */}
-      <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
+<div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
         <SeedLogo 
           isExpanded={isAppExpanded}
           toggleExpand={() => setIsAppExpanded(!isAppExpanded)}
           toggleTerminal={() => setShowTerminal(!showTerminal)}
-          toggleFiles={() => setShowToolsPanel(!showToolsPanel)}
+          toggleFiles={() => setShowExplorer(!showExplorer)}
         />
       </div>
 
-      {/* Render columns ONLY if app is expanded AND their specific toggle is true */}
-      {isAppExpanded && showTerminal && (
-        <div className="left-column" style={{ width: '50%' }}>
-          <Terminal 
-            isConnected={isConnected}
-            sendCommand={sendCommand}
-            latestMessage={latestMessage}
-            attentionShelf={attentionShelf}
-            setAttentionShelf={setAttentionShelf}
-            setAppColor={setAppColor} 
-          />
-        </div>
-      )}
+      {/* MAIN TERMINAL - Always in the DOM, visibility controlled via props */}
+      <Terminal 
+        isVisible={isAppExpanded && showTerminal}
+        isConnected={isConnected}
+        sendCommand={sendCommand}
+        latestMessage={latestMessage}
+        attentionShelf={attentionShelf}
+        setAttentionShelf={setAttentionShelf}
+        setAppColor={setAppColor} 
+        appColor={appColor} 
+        onClose={() => setShowTerminal(false)} 
+      />
 
-      {isAppExpanded && showToolsPanel && (
-        <div className="right-panel" style={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
-          
-          <div className="tools-tabs">
-            <button 
-              className={`tab-btn ${activeToolTab === 'explorer' ? 'active' : ''}`}
-              onClick={() => setActiveToolTab('explorer')}
-              title="File Explorer"
-            >
-              <ExplorerIcon />
-            </button>
-            <button 
-              className={`tab-btn ${activeToolTab === 'viewer' ? 'active' : ''}`}
-              onClick={() => setActiveToolTab('viewer')}
-              title="Doc Viewer"
-            >
-              <ViewerIcon />
-            </button>
-          </div>
+      {/* FILE EXPLORER - Now Floating! */}
+      <FileExplorer 
+        isVisible={isAppExpanded && showExplorer}
+        onClose={() => setShowExplorer(false)}
+        appColor={appColor}
+        attentionShelf={attentionShelf}
+        toggleAttention={toggleAttention}
+        activeDocument={activeDocument}
+        setActiveDocument={handleDocumentSelect} 
+        sendCommand={sendCommand}
+        latestMessage={latestMessage}
+        isConnected={isConnected}
+      />
 
-          <div className="tools-content">
-            {activeToolTab === 'explorer' ? (
-              <FileExplorer 
-                attentionShelf={attentionShelf}
-                toggleAttention={toggleAttention}
-                activeDocument={activeDocument}
-                setActiveDocument={setActiveDocument}
-                sendCommand={sendCommand}
-                latestMessage={latestMessage}
-                isConnected={isConnected}
-              />
-            ) : (
-              <DocumentViewer 
-                activeDocument={activeDocument}
-                sendCommand={sendCommand}
-                latestMessage={latestMessage}
-                isConnected={isConnected}
-                onSelectionChange={setSelectedText}
-              />
-            )}
-          </div>
+      {/* DOCUMENT VIEWER - Now Floating! */}
+      <DocumentViewer 
+        isVisible={isAppExpanded && showViewer}
+        onClose={() => setShowViewer(false)}
+        appColor={appColor}
+        activeDocument={activeDocument}
+        sendCommand={sendCommand}
+        latestMessage={latestMessage}
+        isConnected={isConnected}
+        onSelectionChange={setSelectedText}
+      />
 
-        </div>
-      )}
     </div>
   )
 }
