@@ -1,0 +1,100 @@
+/* src/components/SeedLogo.css */
+
+/* Remove ALL backgrounds, borders, and shadows */
+.seed-wrapper {
+  display: flex;
+  align-items: center;
+  background: transparent; 
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.seed-wrapper.state-folded {
+  height: 28px;
+  justify-content: flex-start;
+}
+
+.seed-wrapper.state-expanded {
+  height: 28px;
+  gap: 12px;
+}
+
+/* Absolute sizing for the logo area */
+.logo-container {
+  position: relative;
+  height: 28px; /* Absolute height */
+  width: 84px;  /* Width based on ~3:1 logo ratio */
+  display: flex;
+}
+
+.logo-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* CRITICAL: The image itself must ignore the mouse completely */
+  pointer-events: none; 
+  user-select: none;
+}
+
+/* Invisible overlay covering the image */
+.interaction-overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  z-index: 10; /* Ensure this sits on top of the image */
+}
+
+/* The 'n' area - exclusively for dragging */
+.drag-zone {
+  width: 35%; 
+  height: 100%;
+  -webkit-app-region: drag; /* Tell Windows this is the titlebar */
+  cursor: grab;
+}
+
+/* The 'Baya' area - exclusively for clicking */
+.click-zone {
+  width: 65%; 
+  height: 100%;
+  -webkit-app-region: no-drag; /* Tell Windows this is clickable */
+  cursor: pointer;
+}
+
+/* --- Toolbar --- */
+.seed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag; 
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--text-muted);
+  opacity: 0.5;
+  margin: 0 4px;
+}
+
+.toolbar-item {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.toolbar-item:hover {
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-color);
+}

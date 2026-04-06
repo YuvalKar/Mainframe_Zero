@@ -1,9 +1,19 @@
 /* src/App.css */
 
+
+/* 1. Add box-sizing to EVERYTHING so borders/padding don't increase element size */
+* {
+  box-sizing: border-box;
+  /* (Keep your existing scrollbar-width rules here for Firefox) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) rgba(0, 0, 0, 0.1);
+}
+
+
 /* Define our clean, dark theme variables */
 :root {
-  --bg-main: #1e1e1e; /* Main dark background */
-  --bg-sidebar: #252526; /* Slightly lighter for panels */
+  --bg-main: #1e1e1ecc; /* Main dark background */
+  --bg-sidebar: #252526cc; /* Slightly lighter for panels */
   --border-color: #3e3e42; /* Subtle dark borders */
   --text-main: #d4d4d4; /* Soft white/gray text */
   --text-muted: #858585; /* Dimmed text for secondary info */
@@ -11,14 +21,20 @@
   --transition-speed: 0.3s;
 }
 
-/* Base styles for a clean slate */
+/* 2. Update the body to strictly hide overflow */
 body {
   margin: 0;
+  padding: 0;
   font-family: var(--font-delicate);
-  background-color: var(--bg-main);
+  background-color: transparent; 
   color: var(--text-main);
-  font-weight: 300; /* Delicate font weight */
+  font-weight: 300; 
+  overflow: hidden; /* <--- CRITICAL: Prevents scrollbars from ever appearing on the main window */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 
 /* --- Global Dark Mode Scrollbars --- */
 ::-webkit-scrollbar {
@@ -45,13 +61,14 @@ body {
   scrollbar-color: var(--border-color) rgba(0, 0, 0, 0.1);
 }
 
-/* Main application layout wrapper */
+/* Ensure the main container is also transparent */
 .app-container {
   display: flex;
   flex-direction: row;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background-color: transparent;
 }
 
 /* Shared styles for all columns */
@@ -125,6 +142,9 @@ body {
   align-items: center;
   gap: 10px; 
   padding: 0 15px; 
+
+  /* --- Allow dragging the window from here --- */
+  -webkit-app-region: drag;  
 }
 
 .tab-btn {
@@ -142,6 +162,15 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 6px; 
+
+  /* --- Make buttons clickable (disable drag for them) --- */
+  -webkit-app-region: no-drag;  
+}
+
+/* Also make the toggle buttons clickable */
+.toggle-btn {
+  /* ... rest of your styles ... */
+  -webkit-app-region: no-drag;
 }
 
 .tab-btn:hover {
