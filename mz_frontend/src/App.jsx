@@ -36,18 +36,12 @@ function App() {
   const [activeDocument, setActiveDocument] = useState(null);
   const [selectedText, setSelectedText] = useState("");
 
-// --- UI Layout State ---
+  // --- UI Layout State ---
   const [activeToolTab, setActiveToolTab] = useState('explorer'); 
   const [showTerminal, setShowTerminal] = useState(true);
   const [showExplorer, setShowExplorer] = useState(true);
   const [showViewer, setShowViewer] = useState(false);
   
-// Helper function to handle file selection AND open the viewer
-  const handleDocumentSelect = (file) => {
-    setActiveDocument(file);
-    setShowViewer(true); 
-  };
-
   // Global state to track if the entire app is expanded or folded
   const [isAppExpanded, setIsAppExpanded] = useState(false);
 
@@ -57,6 +51,44 @@ function App() {
   const [messageQueue, setMessageQueue] = useState([]);
   const [latestMessage, setLatestMessage] = useState(null);
   const wsRef = useRef(null);
+
+// --- Dynamic Click-Through Logic ---
+  const ignoreMouseState = useRef(false);
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (!window.electronAPI || !window.electronAPI.setIgnoreMouseEvents) return;
+
+      // determine if the mouse is currently over the background (not on any interactive element)
+      const isBackground =
+        event.target === document.documentElement ||
+        event.target === document.body ||
+        event.target.id === 'root' ||
+        event.target.classList.contains('app-container');
+
+      // send a message to Electron only if the state has changed (to avoid flooding the communication)
+      if (isBackground !== ignoreMouseState.current) {
+        ignoreMouseState.current = isBackground;
+        
+        if (isBackground) {
+          // we are over the background -> allow clicks to pass through to the desktop/VSCode
+          window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+        } else {
+          // we are over our own element (logo/window) -> capture the clicks
+          window.electronAPI.setIgnoreMouseEvents(false);
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Helper function to handle file selection AND open the viewer
+  const handleDocumentSelect = (file) => {
+    setActiveDocument(file);
+    setShowViewer(true); 
+  };
 
   // Process the message queue one by one
   useEffect(() => {
@@ -146,7 +178,14 @@ function App() {
       )}
 
       {/* Pass the state and the toggle function down to SeedLogo */}
-<div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
+      <div style={{ 
+        position: 'absolute', 
+        top: '20px', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        pointerEvents: 'auto'
+      }}>
         <SeedLogo 
           isExpanded={isAppExpanded}
           toggleExpand={() => setIsAppExpanded(!isAppExpanded)}

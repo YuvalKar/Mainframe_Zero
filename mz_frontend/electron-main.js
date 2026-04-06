@@ -22,15 +22,15 @@ function createWindow() {
         height: FOLDED_HEIGHT,    
         // Center the folded logo on screen
         x: (width / 2) - (FOLDED_WIDTH / 2),
-        y: 20, // Sit nicely at the top
+        y: 20, 
         alwaysOnTop: true,      
         frame: false,            
         transparent: true,
         resizable: false,      
         webPreferences: {
-            nodeIntegration: false, // Changed to false for security with preload
-            contextIsolation: true, // Changed to true
-            preload: path.join(__dirname, 'preload.js') // Connect the bridge
+            nodeIntegration: false, 
+            contextIsolation: true, 
+            preload: path.join(__dirname, 'preload.js') 
         }
     });
 
@@ -74,4 +74,11 @@ ipcMain.on('toggle-window-size', (event, isExpanded) => {
             y: currentBounds.y
         });
     }
+});
+
+// --- Listen to dynamic mouse ignore requests ---
+ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
+    if (!mainWindow) return;
+    // Electron applies the ignore state dynamically
+    mainWindow.setIgnoreMouseEvents(ignore, options || {});
 });

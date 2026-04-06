@@ -61,19 +61,12 @@ body {
   scrollbar-color: var(--border-color) rgba(0, 0, 0, 0.1);
 }
 
-/* Ensure the main container is also transparent */
 .app-container {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
   width: 100vw;
+  height: 100vh;
+  position: relative;
   overflow: hidden;
-  background-color: transparent;
-  pointer-events: none; /* Allow clicks to pass through to floating windows */
-}
-
-.app-container > * {
-  pointer-events: auto;
+  background: transparent; 
 }
 
 /* Shared styles for all columns */
