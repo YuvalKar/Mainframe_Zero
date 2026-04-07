@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--bg-main);
+  background-color: transparent;
   position: relative;
   min-height: 0;
   overflow: hidden;
@@ -16,12 +16,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 55px; 
+  height: 45px; 
   box-sizing: border-box;  
   padding: 15px 24px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-main);
   z-index: 10;
+  width: max-content;
+  border-radius: 0px 0px 8px 0px;
 }
 
 .terminal-logo {
@@ -65,7 +67,7 @@
   font-size: 0.9em;
   outline: none;
   text-transform: capitalize;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s; 
 }
 
 .custom-select:not(:disabled) {
@@ -85,11 +87,13 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 24px 40px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   scroll-behavior: smooth;
+  background-color: transparent;
+  mask-image: linear-gradient(to bottom, transparent 5%, black 60%);
 }
 
 .empty-state {
@@ -146,15 +150,16 @@
 
 /* User message: Top-Left is square (4px), the rest are rounded (16px) */
 .message-row.user .message-bubble {
-  background-color: #2a2a2a; /* Dark gray for user */
+  background-color: var(--bg-main);
   border-radius: 0px 10px 10px 10px;
 }
 
 /* Bot message: Top-Right is square (4px), the rest are rounded (16px) */
 .message-row.bot .message-bubble {
-  background-color: var(--bg-main);
+  background-color: #2a2a2a; /* Dark gray for AI */
   border: 1px solid var(--border-color); 
   border-radius: 10px 0px 10px 10px;
+  border-right: 6px solid var(--fw-theme-color);
 }
 
 /* Apply the 'human' font to the user's messages */
@@ -167,12 +172,12 @@
 /* Apply the 'technical' font to the AI's messages */
 .message-row.bot .message-text {
   font-family: 'Fira Code', monospace;
-  font-size: 0.85em;
+  font-size: 0.75em;
   /* Increase line height to give the text more breathing room */
   line-height: 1.7; 
   /* Slightly pull letters and words closer together to reduce blockiness */
   letter-spacing: -0.9px; 
-  color: #d4d4d4;
+  color: #e2e2e2;
 }
 
 .message-label {
@@ -212,7 +217,7 @@
 
 /* --- Input Area Styles --- */
 .input-area {
-  padding: 20px 40px;
+  padding: 10px 10px;
   background-color: var(--bg-main);
 }
 
@@ -222,7 +227,7 @@
   gap: 10px;
   background-color: #2a2a2a; /* Darker input background */
   border-radius: 0px 10px 10px 10px;
-  padding: 8px 16px;
+  padding: 8px 8px;
   border: 1px solid transparent;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -279,6 +284,7 @@
   border-radius: 0 0 6px 6px;
   display: flex;
   flex-direction: column;
+  background-color: transparent;
 }
 
 /* Style the new drag handle at the top */

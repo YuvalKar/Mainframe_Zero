@@ -142,7 +142,7 @@ return (
       className="explorer-floating-instance"
       topDecoration={
         <div className="explorer-drag-bar">
-          <span>SYS.EXPLORER</span>
+          <span>Attention Span</span>
         </div>
       }
     >
@@ -151,7 +151,7 @@ return (
         
         {/* Explorer Section */}
         <div className="explorer-section">
-          <h3 className="section-title">Explorer</h3>
+          <h3 className="section-title">Parietal Lobe</h3>
           
           {isLoading ? (
             <div className="empty-message">Scanning workspace...</div>
@@ -172,7 +172,7 @@ return (
         {/* Attention Shelf Section */}
         <div className="shelf-section">
           <h3 className="section-title">
-            Attention ON ({attentionShelf.length})
+            Attention ({attentionShelf.length})
           </h3>
           
           {attentionShelf.length === 0 ? (

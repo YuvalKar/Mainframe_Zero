@@ -41,8 +41,8 @@ const SeedLogo = ({ isExpanded, toggleExpand, toggleTerminal, toggleFiles }) => 
       {isExpanded && (
         <div className="seed-toolbar">
           <div className="toolbar-divider" />
-          <button className="toolbar-item" onClick={toggleTerminal}>Terminal</button>
-          <button className="toolbar-item" onClick={toggleFiles}>Explorer</button>
+          <button className="toolbar-item" onClick={toggleTerminal}>Cortex</button>
+          <button className="toolbar-item" onClick={toggleFiles}>Attention</button>
         </div>
       )}
     </div>

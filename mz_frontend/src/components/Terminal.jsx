@@ -180,7 +180,7 @@ return (
       topDecoration={
         // This acts as our drag handle, sitting above the actual terminal
         <div className="terminal-drag-bar">
-          <span>SYS.TERMINAL // ONLINE</span>
+          <span>Cortex Terminal</span>
         </div>
       }
     >
@@ -189,7 +189,7 @@ return (
         
         {/* Top Bar / Header */}
         <div className="terminal-header">
-          <img src="/nBaya_logo.svg" alt="nBaya logo" className="terminal-logo" />
+          {/* <img src="/nBaya_logo.svg" alt="nBaya logo" className="terminal-logo" /> */}
           
           <div className="header-controls">
             {!isConnected && (
@@ -284,7 +284,7 @@ return (
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder={isConnected ? "Message Mainframe..." : "Connecting..."}
+              placeholder={isConnected ? "Message Gimi..." : "Connecting..."}
               disabled={!isConnected}
               className="chat-input"
             />

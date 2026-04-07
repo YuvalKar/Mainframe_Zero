@@ -80,7 +80,7 @@ export default function DocumentViewer({
       className="viewer-floating-instance"
       topDecoration={
         <div className="viewer-drag-bar">
-          <span>SYS.VIEWER</span>
+          <span>Laser Focus</span>
         </div>
       }
     >
@@ -88,7 +88,7 @@ export default function DocumentViewer({
         
         {!activeDocument ? (
           <div className="document-viewer-empty">
-            Select a file from the shelf to preview...
+            Select a file from the Attention Span to preview...
           </div>
         ) : (
           <>
