@@ -32,7 +32,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%; 
+  /* width: 100%;  */
   /* React inline styles will toggle cursor between grab/grabbing */
   /* CRITICAL: Catch mouse events so dragging works */
   pointer-events: auto; 
@@ -52,7 +52,7 @@
   justify-content: center;
   line-height: 1;
   z-index: 20; 
-  color: #ffffff;
+  color: #e7e7e7;
   transition: all 0.2s ease;
   /* CRITICAL: Catch mouse events so clicking works */
   pointer-events: auto; 
@@ -73,8 +73,8 @@
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   z-index: 5;
-  /* Use the dynamic color passed from React for a subtle border */
-  border: 1px solid var(--fw-theme-color); 
+  /* Use the dynamic color passed from React for a subtle border - DEBUG YUVAL*/
+  /* border: 1px solid var(--fw-theme-color);  */
   border-radius: 4px;
   /* CRITICAL: Re-enable mouse events for scrolling, selecting text, and clicking inside */
   pointer-events: auto; 
