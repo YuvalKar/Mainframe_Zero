@@ -211,9 +211,9 @@
   color: #ef5350;
 }
 
-.message-text.normal {
-  /* Inherited from specific row classes */
-}
+/* .message-text.normal {
+  Inherited from specific row classes
+} */
 
 /* --- Input Area Styles --- */
 .input-area {
