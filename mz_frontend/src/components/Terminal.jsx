@@ -167,6 +167,43 @@ export default function Terminal({ attentionShelf, setAttentionShelf, sendComman
     setUserInput("");
   };
 
+  const TopDecor = (
+    <div>
+      <div className="terminal-svg-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -8 270 458" preserveAspectRatio="none">
+          <g>
+            {/* Main structural lines */}
+            <path 
+              stroke={appColor} stroke-width="2" fill="none" 
+              d="M30 389 V18.4 M30 111.6 H265" 
+            />
+
+            {/* Top anchor circle */}
+            <circle 
+              cx="30" 
+              cy="7" 
+              r="15" 
+              fill={appColor} 
+              stroke={appColor} 
+              strokeWidth="0" 
+            />
+
+            {/* Right branch diagonal indicator stripes */}
+            <path fill={appColor} fillOpacity="0.75" d="M248.5 108 H265 L253.7 88 H237.2 Z" />
+            <path fill={appColor} fillOpacity="0.75" d="M227.3 108 H243.8 L232.5 88 H216 Z" />
+            <path fill={appColor} fillOpacity="0.75" d="M205.3 108 H221.7 L210.5 88 H194 Z" />
+
+            {/* Left vertical data bar */}
+            <path fill={appColor} fillOpacity="0.75" d="M23 177 V454 L0 440.7 V190.3 Z" />
+          </g>
+        </svg>
+      </div>
+      <div className="terminal-drag-bar">
+          <span>Cortex Terminal</span>
+      </div>
+    </div>
+  );
+
 return (
     <FloatingWindow
       isVisible={isVisible}
@@ -175,17 +212,12 @@ return (
       width="600px" // Standard width for the terminal
       color={appColor || "#4da8da"}
       contentMarginTop={24} // Height of our new drag bar
-      closeButtonPos={{ top: 2, right: 10 }}
+      closeButtonPos={{ top: -71, right: 594 }}
       className="terminal-floating-instance"
-      topDecoration={
-        // This acts as our drag handle, sitting above the actual terminal
-        <div className="terminal-drag-bar">
-          <span>Cortex Terminal</span>
-        </div>
-      }
+      topDecoration={TopDecor}
     >
       {/* THIS IS YOUR EXACT ORIGINAL HTML STRUCTURE */}
-      <div className="terminal-container">
+      <div className="terminal-container" >
         
         {/* Top Bar / Header */}
         <div className="terminal-header">
@@ -251,8 +283,7 @@ return (
         <div className="chat-area">
           {chatLog.length === 0 && (
             <div className="empty-state">
-              <h3>How can I help you today?</h3>
-              <p>Select files from the explorer or just start typing.</p>
+              <h3>Hi, what's up?</h3>
             </div>
           )}
 

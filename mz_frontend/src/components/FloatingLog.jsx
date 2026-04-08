@@ -32,6 +32,7 @@ export default function FloatingLog({ systemLogs, appColor }) {
 
   // Define the SVG decorations
   const loggerTopDeco = (
+    <div style={{ width:'700px'}}>
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 227" width="100%" height="100%">
         <path d="M389.5,87 L406,87 L394.7,67 L378.2,67 Z M368.3,87 L384.8,87 L373.5,67 L357,67 Z M346.2,87 L362.7,87 L351.4,67 L335,67 Z" 
         fill={my_color} fill-opacity="1.0"/>
@@ -43,10 +44,11 @@ export default function FloatingLog({ systemLogs, appColor }) {
         <path d="M1156,86 L1180,86 L1190,104" stroke={my_color} stroke-width="2" fill="none"/>
         <circle cx="1080" cy="15" r="14" fill={my_color} fill-opacity="0.8" stroke={my_color} stroke-width="2"/>
       </svg>
+      </div>
   );
 
   const loggerBottomDeco = (
-    <div style={{ marginTop:'-32px'}}>
+    <div style={{ marginTop:'-34px'}}>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1187 80" width="100%" height="100%">
       <path d="M854,57 L1131,57 L1117.7,80 L867.3,80 Z" fill={my_color} fill-opacity="1.0"/>
       <path d="M0,0 L0,57 L1172,57 L1187,31 L1187,11.7" stroke={my_color} stroke-width="4" fill="none"/>
