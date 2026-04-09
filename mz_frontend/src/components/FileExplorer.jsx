@@ -127,22 +127,22 @@ export default function FileExplorer({
   }, [latestMessage]); 
 
   // Calculate a safe starting X position to prevent rendering off-screen.
-  // Places the window 420px from the right edge, but never less than 20px from the left.
-  const safeStartX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 420) : 500;
+  // Places the window 420px from the right edge, but never less than 50px from the left.
+  const safeStartX = typeof window !== 'undefined' ? Math.max(50, window.innerWidth - 420) : 500;
   
 return (
     <FloatingWindow
       isVisible={isVisible}
       onClose={onClose}
-      initialPosition={{ x: safeStartX, y: 150 }} // ממקם אותו בצד ימין
-      width="380px" // סייר קבצים בדרך כלל צר יותר מטרמינל
+      initialPosition={{ x: safeStartX, y: 150 }} 
+      width="380px" 
       color={appColor || "#4da8da"}
       contentMarginTop={24}
       closeButtonPos={{ top: 2, right: 10 }}
       className="explorer-floating-instance"
       topDecoration={
         <div className="explorer-drag-bar">
-          <span>Attention Span</span>
+          <span>Parietal Lobe</span>
         </div>
       }
     >
@@ -151,7 +151,7 @@ return (
         
         {/* Explorer Section */}
         <div className="explorer-section">
-          <h3 className="section-title">Parietal Lobe</h3>
+          <h3 className="section-title">Attention Span</h3>
           
           {isLoading ? (
             <div className="empty-message">Scanning workspace...</div>
