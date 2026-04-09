@@ -7,6 +7,7 @@
 	"settings": {
 		"workbench.preferredLightColorTheme": "Visual Studio Light",
 		"editor.foldingHighlight": false,
-		"workbench.colorTheme": "Visual Studio Dark"
+		"workbench.colorTheme": "Visual Studio Dark",
+		"workbench.preferredDarkColorTheme": "Visual Studio Light"
 	}
 }
