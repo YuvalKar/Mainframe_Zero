@@ -5,9 +5,10 @@
 		}
 	],
 	"settings": {
-		"workbench.preferredLightColorTheme": "Visual Studio Light",
+		"workbench.preferredLightColorTheme": "Dark Modern",
 		"editor.foldingHighlight": false,
-		"workbench.colorTheme": "Visual Studio Dark",
-		"workbench.preferredDarkColorTheme": "Visual Studio Light"
+		"workbench.colorTheme": "Dark Modern",
+		"workbench.preferredDarkColorTheme": "Dark Modern",
+		"workbench.preferredHighContrastLightColorTheme": "Dark Modern"
 	}
 }

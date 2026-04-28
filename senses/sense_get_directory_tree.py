@@ -90,7 +90,7 @@ def _build_tree(current_path: str, allowed_extensions: list, ignore_patterns: li
 def execute(root_path: str = ".", allowed_extensions: list = None) -> dict:
     # 1. Validate inputs and set defaults
     if allowed_extensions is None:
-        allowed_extensions = ['.md', '.py']
+        allowed_extensions = ['.md', '.py', '.txt', '.json', '.bas']
         
     if not os.path.exists(root_path):
         return {"success": False, "message": f"Path not found: {root_path}"}

@@ -83,6 +83,27 @@ async def run_agentic_loop(session_context: dict, current_prompt: str, raw_user_
 
     log_pipeline_step(log_file, "backend_enriched_prompt", current_prompt)
 
+    # YUVAL TODO: normal loop should look like this:
+    # 1. send the prompt as it we are only chatting
+    # 2. if we got action list, maybe we should ask first for a definition of the plan?
+    # 2.a. got the first action - do it and record the result
+    # 3. best thing now would be if we could cut the prompt to fit just what we need. for exampe:
+    #      the plan is: find a function to export, get the API, export using it, validate resoults.
+
+    # im still not doing much with the attension
+    # we may want to switch to short bursts of continues AI? just for the action? - I prefer not to do that
+    # if we would have a "good" / "bad" button, we could cut the prompt according to it.
+
+    # we can use the "thought" to define the action, we ned to brek it to steps
+    # if it is  - - create a blue cone in Blender and name it 'bluecone'
+    # it needs to be: 
+    # # 1. create a cone
+    # # 2. attache blue color to it
+    # # 3. name it 'bluecone'
+    # So we need to "RAG" each one and only then tailor the script
+
+
+
     while True:
         loop_counter += 1
 
